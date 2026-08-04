@@ -311,6 +311,28 @@
   .askline{font-size:12.5px;color:var(--muted);line-height:1.5;padding:2px 4px 4px}
 
   /* ---- superposiciones ---- */
+  /* ---- entrada del dia ---- */
+  .intro-s{position:fixed;inset:0;z-index:120;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 34px) 22px 34px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .intro-in{width:100%;max-width:360px;margin:auto 0}
+  .i-r{width:52px;height:52px;border-radius:15px;border:2px solid var(--amber);display:grid;place-items:center;color:var(--amber);margin-bottom:20px}
+  .intro-in .ik{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+  .intro-in h1{font-size:28px;line-height:1.22;font-weight:600;color:var(--text);margin:0 0 18px;letter-spacing:-.3px}
+  .i-q{border-left:2px solid var(--amber);padding-left:14px;font-size:16px;line-height:1.55;color:var(--muted);margin:0 0 26px}
+  .i-p{font-size:14.5px;line-height:1.55;color:var(--muted);margin:0 0 20px}
+  .fadeup{opacity:0;transform:translateY(10px);animation:fu .5s cubic-bezier(.2,.7,.3,1) both}
+  .d1{animation-delay:.08s} .d2{animation-delay:.3s} .d3{animation-delay:.6s} .d4{animation-delay:.95s}
+  @keyframes fu{to{opacity:1;transform:none}}
+  .linkbtn{display:block;width:100%;background:none;border:none;color:var(--faint);font-size:13.5px;font-weight:600;padding:13px;cursor:pointer;margin-top:2px}
+  .rec-l{display:flex;flex-direction:column;gap:7px}
+  .rec-i{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 12px;cursor:pointer;color:var(--muted);font-size:14.5px;font-family:inherit}
+  .rec-i.on{border-color:var(--amber);color:var(--text)}
+  .rec-i.ex{cursor:default;border-color:var(--teal)}
+  .rec-b{flex-shrink:0;width:21px;height:21px;border-radius:6px;border:1.5px solid var(--border);display:grid;place-items:center;color:var(--bg)}
+  .rec-i.on .rec-b{background:var(--amber);border-color:var(--amber)}
+  .rec-i.ex .rec-b{background:var(--teal);border-color:var(--teal)}
+  .rec-t{flex:1;min-width:0;line-height:1.4}
+  .rec-k{flex-shrink:0;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ghost)}
+  @media (prefers-reduced-motion:reduce){ .fadeup{animation-duration:.01s;animation-delay:0s} }
   .ovl{position:fixed;inset:0;z-index:90;background:rgba(16,13,11,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:22px;animation:fadein .25s ease both}
   .ovlcard{position:relative;overflow:hidden;width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px 22px;text-align:center;animation:pop .4s cubic-bezier(.2,.9,.3,1.25) both}
   .ovlcard h3{font-size:20px;font-weight:600;margin:6px 0 8px}
@@ -480,7 +502,7 @@ var DB=emptyDB();
 function newDay(k){
   var s=DB.settings||{};
   return {date:k,pool:[],top3:[],workStart:s.workStart||"09:30",workEnd:s.workEnd||"19:00",
-          doneTop:{},doneDaily:{},extras:[],closed:false,u:now()};
+          doneTop:{},doneDaily:{},extras:[],closed:false,u:0};
 }
 function day(k){
   k=k||todayKey();
@@ -931,16 +953,70 @@ function payload(){
           rewards:DB.rewards,purchases:DB.purchases,settings:DB.settings,
           worldBonus:DB.worldBonus||0,seenWorld:DB.seenWorld||1};
 }
+function dayFilled(d){
+  if(!d)return 0;
+  var n=(d.pool||[]).length+(d.top3||[]).length+(d.extras||[]).length;
+  n+=Object.keys(d.doneTop||{}).length+Object.keys(d.doneDaily||{}).length;
+  if(d.closed)n++;
+  return n;
+}
+function mergeFlags(a,b){
+  var o={},k;
+  for(k in (a||{})) if(a[k])o[k]=true;
+  for(k in (b||{})) if(b[k])o[k]=true;
+  return o;
+}
+/* fusiona un mismo dia visto por dos aparatos sin perder nada de ninguno */
+function mergeDay(da,db2){
+  if(!dayFilled(da))return db2;
+  if(!dayFilled(db2))return da;
+  var base=((db2.u||0)>(da.u||0))?db2:da, other=(base===db2)?da:db2;
+  var out={},k;
+  for(k in base) out[k]=base[k];
+  var byId={},pool=[];
+  (base.pool||[]).concat(other.pool||[]).forEach(function(p){
+    if(!p||!p.id||byId[p.id])return; byId[p.id]=1; pool.push(p);
+  });
+  var seenT={},pool2=[];
+  pool.forEach(function(p){
+    var t=String(p.text||"").toLowerCase().trim();
+    if(t&&seenT[t])return; if(t)seenT[t]=1; pool2.push(p);
+  });
+  out.pool=pool2;
+  var inPool={}; pool2.forEach(function(p){inPool[p.id]=1;});
+  var t3=(base.top3||[]).filter(function(id){return inPool[id];});
+  if(!t3.length) t3=(other.top3||[]).filter(function(id){return inPool[id];});
+  out.top3=t3.slice(0,3);
+  out.doneTop=mergeFlags(base.doneTop,other.doneTop);
+  out.doneDaily=mergeFlags(base.doneDaily,other.doneDaily);
+  var se={},ex=[];
+  (base.extras||[]).concat(other.extras||[]).forEach(function(x){
+    if(!x)return; var key=x.poolId||x.id; if(!key||se[key])return; se[key]=1; ex.push(x);
+  });
+  out.extras=ex;
+  out.closed=!!(base.closed||other.closed);
+  out.harvested=!!(base.harvested||other.harvested);
+  out.full=!!(base.full||other.full);
+  out.u=Math.max(base.u||0,other.u||0);
+  return out;
+}
+function pickList(newer,older,k){
+  var a=newer[k],b=older[k];
+  if(a==null)return b;
+  if(a.length===0&&b&&b.length)return b;
+  return a;
+}
 function mergeDB(a,b){
-  /* a = local, b = remoto. Último en escribir gana, por día y global. */
+  /* a = local, b = remoto. Nada se borra por llegar tarde. */
   var out={v:2,sync:a.sync,days:{}};
-  var newer=((b&&b.u)||0)>((a&&a.u)||0)?b:a;
-  ["dailies","carry","areas","rewards","settings","worldBonus","seenWorld"].forEach(function(k){ out[k]=(newer[k]!=null?newer[k]:a[k]); });
+  var nw=((b&&b.u)||0)>((a&&a.u)||0)?b:a, ol=(nw===a)?(b||{}):a;
+  ["dailies","areas","rewards"].forEach(function(k){ out[k]=pickList(nw,ol,k); });
+  ["carry","settings","worldBonus","seenWorld"].forEach(function(k){ out[k]=(nw[k]!=null?nw[k]:a[k]); });
   var keys={}; Object.keys(a.days||{}).forEach(function(k){keys[k]=1;}); Object.keys((b&&b.days)||{}).forEach(function(k){keys[k]=1;});
   Object.keys(keys).forEach(function(k){
     var da=(a.days||{})[k], db2=((b&&b.days)||{})[k];
     if(!da){out.days[k]=db2;return;} if(!db2){out.days[k]=da;return;}
-    out.days[k]=((db2.u||0)>(da.u||0))?db2:da;
+    out.days[k]=mergeDay(da,db2);
   });
   var seen={},pu=[];
   (a.purchases||[]).concat((b&&b.purchases)||[]).forEach(function(p){ if(p&&p.id&&!seen[p.id]){seen[p.id]=1;pu.push(p);} });
@@ -1622,6 +1698,11 @@ function overlayHtml(){
 function render(){
   if(!S.ready)return;
   var app=document.getElementById("app"), tb=document.getElementById("tabs");
+  if(S.intro&&!needsWelcome()){
+    app.innerHTML=introHtml();
+    tb.innerHTML=""; tb.className="tabs hidden";
+    restoreFocus(); return;
+  }
   if(needsWelcome()){
     app.innerHTML=renderWelcome();
     tb.innerHTML=""; tb.className="tabs hidden";
@@ -1724,18 +1805,23 @@ function removeExtra(id){
 }
 /* lo que queda vivo al terminar un día: Las 3 sin marcar + todo lo del vaciado
    que no se hizo. Lo hecho (Las 3 marcadas y las extras cumplidas) no vuelve. */
+/* Solo viaja al dia siguiente lo que llegaste a comprometer: Las 3 y lo marcado
+   como extra. Lo que quedo suelto en el vaciado muere con el dia, que para eso
+   el vaciado es un sitio donde soltar sin que te persiga. */
+var MAXCARRY=3;
 function pendingOf(d,k){
   var out=[];
   (d.top3||[]).forEach(function(id){
     if((d.doneTop||{})[id])return;
-    var p=poolById(d,id); if(p)out.push({text:p.text,area:p.area,from:k});
+    var p=poolById(d,id); if(p)out.push({text:p.text,area:p.area,from:k,n:(p.carried||0)+1});
   });
   (d.pool||[]).forEach(function(p){
     if((d.top3||[]).indexOf(p.id)>=0)return;
-    if(p.extra&&extraEntryOf(d,p.id))return;
-    out.push({text:p.text,area:p.area,from:k});
+    if(!p.extra)return;
+    if(extraEntryOf(d,p.id))return;
+    out.push({text:p.text,area:p.area,from:k,n:(p.carried||0)+1});
   });
-  return out;
+  return out.filter(function(c){return c.n<=MAXCARRY;});
 }
 function harvestInto(carry,list){
   var seen={};
@@ -1804,6 +1890,88 @@ function importJSON(file){
   fr.readAsText(file);
 }
 
+/* ============ entrada del dia ============
+   Se ve una vez al dia y por aparato, asi que no viaja en la sincronizacion. */
+var KINTRO="focus:intro";
+var recDraft="";
+function introDone(){ return sRaw(KINTRO)===todayKey(); }
+function markIntroDone(){ sRawSet(KINTRO,todayKey()); }
+
+/* el ultimo dia con vida que quedo sin cerrar, si fue hace tres dias o menos */
+function dayToRecover(){
+  var tk=todayKey(), ks=allDayKeys().filter(function(k){return k<tk;});
+  for(var i=ks.length-1;i>=0;i--){
+    var k=ks[i], d=DB.days[k];
+    if(!d)continue;
+    if(d.closed||d.recoverSeen||d.legacy)continue;
+    if(dayFilled(d)<1)continue;
+    var gap=Math.round((dateOfKey(tk).getTime()-dateOfKey(k).getTime())/86400000);
+    return gap>3?null:k;
+  }
+  return null;
+}
+function introHtml(){
+  if(S.intro&&S.intro.stage==="rec")return recoverHtml(S.intro.k);
+  var k=S.intro?S.intro.k:null;
+  return '<div class="intro-s"><div class="intro-in">'+
+    '<div class="i-r fadeup d1">'+IC.target(26)+'</div>'+
+    '<div class="ik fadeup d2">'+esc(prettyDate())+'</div>'+
+    '<h1 class="fadeup d2">'+esc(greeting())+'</h1>'+
+    '<div class="i-q fadeup d3">'+esc(quoteOfDay())+'</div>'+
+    '<button class="bigbtn am fadeup d4" data-action="intro-go">'+(k?"Ver lo de ayer":"Empezar")+'</button>'+
+    '</div></div>';
+}
+/* la animacion solo la primera vez que se pinta la pantalla: si se repitiera en
+   cada toque, la lista parpadearia entera cada vez que marcas algo */
+var recPainted=false;
+function fu(c){ return recPainted?"":(" fadeup "+c); }
+function recoverHtml(k){
+  var d=DB.days[k]; if(!d)return "";
+  var h='<div class="intro-s"><div class="intro-in">'+
+    '<div class="ik'+fu("d1")+'">'+esc(prettyDate(k))+'</div>'+
+    '<h1 class="'+(recPainted?"":"fadeup d1")+'">No llegaste a bajar la persiana</h1>'+
+    '<p class="i-p'+fu("d2")+'">Esto es lo que había apuntado. Marca lo que sí hiciste y ciérralo ahora: cuenta igual que si lo hubieses cerrado a su hora. Si prefieres dejarlo, tampoco pasa nada.</p>'+
+    '<div class="rec-l'+fu("d3")+'">';
+  var any=false;
+  (d.top3||[]).forEach(function(id){
+    var p=poolById(d,id); if(!p)return; any=true;
+    var on=!!(d.doneTop||{})[id];
+    h+='<button class="rec-i'+(on?' on':'')+'" data-action="rec-top" data-id="'+id+'">'+
+       '<span class="rec-b">'+(on?IC.check(13):'')+'</span>'+
+       '<span class="rec-t">'+esc(p.text)+'</span></button>';
+  });
+  (DB.dailies||[]).forEach(function(x){
+    any=true;
+    var on=!!(d.doneDaily||{})[x.id];
+    h+='<button class="rec-i'+(on?' on':'')+'" data-action="rec-daily" data-id="'+x.id+'">'+
+       '<span class="rec-b">'+(on?IC.check(13):'')+'</span>'+
+       '<span class="rec-t">'+esc(x.text)+'</span><span class="rec-k">Diaria</span></button>';
+  });
+  (d.extras||[]).forEach(function(x){
+    any=true;
+    h+='<div class="rec-i on ex"><span class="rec-b">'+IC.check(13)+'</span>'+
+       '<span class="rec-t">'+esc(x.text)+'</span><span class="rec-k">Extra</span></div>';
+  });
+  if(!any)h+='<div class="empty">No había nada apuntado ese día.</div>';
+  h+='</div>'+
+    '<div class="row'+fu("d3")+'" style="margin-top:12px">'+
+    '<input id="recDraft" class="inp sm" placeholder="¿Hiciste algo más sin apuntarlo?" value="'+esc(recDraft)+'"/>'+
+    '<button class="iconbtn" data-action="rec-add">'+IC.plus(18)+'</button></div>'+
+    '<div class="note" style="margin:7px 0 0">Lo que añadas aquí entra como extra de ese día.</div>'+
+    '<button class="bigbtn am'+fu("d4")+'" style="margin-top:18px" data-action="rec-close">Cerrar ese día y entrar</button>'+
+    '<button class="linkbtn'+fu("d4")+'" data-action="rec-skip">Dejarlo como está</button>'+
+    '</div></div>';
+  recPainted=true;
+  return h;
+}
+function finishIntro(){
+  markIntroDone();
+  S.intro=null;
+  harvestCarry(); applyCarry();
+  save({nosync:true});
+  render();
+}
+
 /* ============ eventos delegados ============ */
 function onClick(e){
   var el=e.target.closest?e.target.closest("[data-action]"):null; if(!el)return;
@@ -1851,6 +2019,29 @@ function onClick(e){
   else if(a==="buy-cancel"){ S.confirmBuy=null; render(); }
   else if(a==="bought-ok"){ S.bought=null; render(); }
   else if(a==="world-ok"){ S.worldUp=null; render(); }
+  else if(a==="intro-go"){
+    if(S.intro&&S.intro.k)S.intro={stage:"rec",k:S.intro.k};
+    else finishIntro();
+    render();
+  }
+  else if(a==="rec-top"){
+    var rd=DB.days[S.intro.k]; if(rd){ rd.doneTop=rd.doneTop||{}; if(rd.doneTop[id])delete rd.doneTop[id]; else rd.doneTop[id]=true; rd.u=now(); }
+    render();
+  }
+  else if(a==="rec-daily"){
+    var rd2=DB.days[S.intro.k]; if(rd2){ rd2.doneDaily=rd2.doneDaily||{}; if(rd2.doneDaily[id])delete rd2.doneDaily[id]; else rd2.doneDaily[id]=true; rd2.u=now(); }
+    render();
+  }
+  else if(a==="rec-add"){ recAdd(); }
+  else if(a==="rec-close"){
+    var k3=S.intro.k, rd3=DB.days[k3];
+    if(rd3){ rd3.full=dayComplete(rd3); rd3.closed=true; rd3.recoverSeen=true; rd3.u=now(); }
+    save(); finishIntro(); toast("Día cerrado. Lo hecho cuenta.");
+  }
+  else if(a==="rec-skip"){
+    var rd4=DB.days[S.intro.k]; if(rd4){ rd4.recoverSeen=true; rd4.u=now(); }
+    save(); finishIntro();
+  }
   else if(a==="acc"){ S.acc[id]=!S.acc[id]; render(); }
   else if(a==="toggle-game"){
     DB.settings=DB.settings||{};
@@ -1904,6 +2095,7 @@ function onInput(e){
   else if(i==="rwName")rwName=t.value;
   else if(i==="rwCost")rwCost=t.value;
   else if(i==="welname")S.nameDraft=t.value;
+  else if(i==="recDraft")recDraft=t.value;
   else if(i==="tokinp"){ setToken(t.value.trim()); paintSyncDot(); }
   else if(i==="gidinp"){ DB.sync.gistId=t.value.trim(); sSet(KDB,DB); }
   else if(t.getAttribute&&t.getAttribute("data-area")){
@@ -1975,7 +2167,7 @@ function applyCarry(){
     var t=c.text||String(c),k=String(t).toLowerCase().trim();
     if(!k||have[k])return;
     have[k]=1; moved=true;
-    d.pool.push({id:uid(),text:t,area:c.area||"_",from:c.from||"prev"});
+    d.pool.push({id:uid(),text:t,area:c.area||"_",from:c.from||"prev",carried:(c.n||1)});
   });
   DB.carry=(DB.carry||[]).filter(function(c){return c.from===tk;});
   if(moved)touchDay();
@@ -2004,8 +2196,9 @@ function boot(){
       if(mig){ DB=mig; toast("Datos anteriores recuperados"); }
     }
     day();
-    harvestCarry();
-    applyCarry();
+    var _rk=dayToRecover();
+    if(!introDone()&&!needsWelcome()) S.intro={stage:"hello",k:_rk};
+    if(!S.intro){ harvestCarry(); applyCarry(); }
     S.area=(DB.areas[0]||{}).id||"neg"; S.extraArea=S.area;
     S.welGame=!(DB.settings&&DB.settings.game===false);
     S.nameDraft=userName();
@@ -2033,7 +2226,10 @@ var bootDay=todayKey();
 setInterval(function(){
   if(todayKey()!==bootDay){
     bootDay=todayKey();
-    day(); harvestCarry(); applyCarry(); save({nosync:true});
+    day();
+    if(!introDone()&&!needsWelcome()){ S.intro={stage:"hello",k:dayToRecover()}; }
+    else { harvestCarry(); applyCarry(); }
+    save({nosync:true});
     S.mode="am"; S.selDay=null; render();
   }
 },60000);
@@ -2042,6 +2238,18 @@ setInterval(function(){
 document.addEventListener("visibilitychange",function(){
   if(!document.hidden&&token()&&DB.sync.gistId) syncNow(true);
 });
+
+/* anadir algo que hiciste ayer y no llegaste a apuntar */
+function recAdd(){
+  var t=String(recDraft||"").trim(); if(!t||!S.intro||!S.intro.k)return;
+  var d=DB.days[S.intro.k]; if(!d)return;
+  var ar=((DB.areas||[])[0]||{}).id||"neg";
+  var pid=uid();
+  d.pool=d.pool||[]; d.pool.push({id:pid,text:t,area:ar,extra:true});
+  d.extras=d.extras||[]; d.extras.push({id:uid(),poolId:pid,text:t,area:ar,ts:now()});
+  d.u=now(); recDraft=""; save();
+  focusId="recDraft"; focusPos=0; render();
+}
 
 boot();
 })();
