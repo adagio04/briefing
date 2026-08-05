@@ -494,6 +494,7 @@ function emptyDB(){
     purchases:[],
     settings:{workStart:"09:30",workEnd:"19:00",quote:true,game:true,notebook:true,name:""},
     worldBonus:0, seenWorld:1,
+    gone:{},
     sync:{gistId:"",lastSync:0}
   };
 }
@@ -633,14 +634,13 @@ function closingLines(){
   return L.slice(0,5);
 }
 
-/* saludo con nombre, según la hora y variando por día */
+/* saludo cortés con nombre, según la franja horaria */
 function greeting(){
   var n=userName(), hh=new Date().getHours(), set;
-  if(hh<6) set=["Aún en pie","De madrugada","Silencio total"];
-  else if(hh<12) set=["Buenos días","Empezamos","Buen día"];
-  else if(hh<15) set=["Mitad del día","Buenas","A media mañana"];
-  else if(hh<20) set=["Buenas tardes","Por la tarde","Recta final"];
-  else set=["Buenas noches","Se acaba el día","Última hora"];
+  if(hh<6) set=["Buenas noches","Muy buenas noches"];
+  else if(hh<13) set=["Buenos días","Muy buenos días"];
+  else if(hh<20) set=["Buenas tardes","Muy buenas tardes"];
+  else set=["Buenas noches","Muy buenas noches"];
   var idx=Math.floor(dateOfKey(todayKey()).getTime()/86400000);
   var g=set[((idx%set.length)+set.length)%set.length];
   return n?(g+", "+n):g;
@@ -951,12 +951,15 @@ function gh(path,opts){
 function payload(){
   return {v:2,u:DB.u,dailies:DB.dailies,days:DB.days,carry:DB.carry,areas:DB.areas,
           rewards:DB.rewards,purchases:DB.purchases,settings:DB.settings,
-          worldBonus:DB.worldBonus||0,seenWorld:DB.seenWorld||1};
+          worldBonus:DB.worldBonus||0,seenWorld:DB.seenWorld||1,gone:DB.gone||{}};
 }
 function dayFilled(d){
   if(!d)return 0;
   var n=(d.pool||[]).length+(d.top3||[]).length+(d.extras||[]).length;
   n+=Object.keys(d.doneTop||{}).length+Object.keys(d.doneDaily||{}).length;
+  /* un dia donde solo has borrado tambien es un dia tocado: si no, el aparato
+     que aun tiene la tarea gana y te la devuelve */
+  n+=Object.keys(d.gone||{}).length;
   if(d.closed)n++;
   return n;
 }
@@ -973,9 +976,14 @@ function mergeDay(da,db2){
   var base=((db2.u||0)>(da.u||0))?db2:da, other=(base===db2)?da:db2;
   var out={},k;
   for(k in base) out[k]=base[k];
+  /* lo borrado en cualquiera de los dos aparatos se queda borrado */
+  var gone=mergeFlags(base.gone,other.gone), goneTs={};
+  for(k in (base.gone||{})) goneTs[k]=base.gone[k];
+  for(k in (other.gone||{})) if(!goneTs[k]||other.gone[k]>goneTs[k]) goneTs[k]=other.gone[k];
+  out.gone=goneTs;
   var byId={},pool=[];
   (base.pool||[]).concat(other.pool||[]).forEach(function(p){
-    if(!p||!p.id||byId[p.id])return; byId[p.id]=1; pool.push(p);
+    if(!p||!p.id||byId[p.id]||gone[p.id])return; byId[p.id]=1; pool.push(p);
   });
   var seenT={},pool2=[];
   pool.forEach(function(p){
@@ -987,11 +995,14 @@ function mergeDay(da,db2){
   var t3=(base.top3||[]).filter(function(id){return inPool[id];});
   if(!t3.length) t3=(other.top3||[]).filter(function(id){return inPool[id];});
   out.top3=t3.slice(0,3);
-  out.doneTop=mergeFlags(base.doneTop,other.doneTop);
+  var dt=mergeFlags(base.doneTop,other.doneTop);
+  for(k in dt) if(gone[k]) delete dt[k];
+  out.doneTop=dt;
   out.doneDaily=mergeFlags(base.doneDaily,other.doneDaily);
   var se={},ex=[];
   (base.extras||[]).concat(other.extras||[]).forEach(function(x){
-    if(!x)return; var key=x.poolId||x.id; if(!key||se[key])return; se[key]=1; ex.push(x);
+    if(!x)return; if(gone[x.id]||(x.poolId&&gone[x.poolId]))return;
+    var key=x.poolId||x.id; if(!key||se[key])return; se[key]=1; ex.push(x);
   });
   out.extras=ex;
   out.closed=!!(base.closed||other.closed);
@@ -1010,7 +1021,17 @@ function mergeDB(a,b){
   /* a = local, b = remoto. Nada se borra por llegar tarde. */
   var out={v:2,sync:a.sync,days:{}};
   var nw=((b&&b.u)||0)>((a&&a.u)||0)?b:a, ol=(nw===a)?(b||{}):a;
-  ["dailies","areas","rewards"].forEach(function(k){ out[k]=pickList(nw,ol,k); });
+  /* lapidas globales: diarias y recompensas borradas no vuelven, y se olvidan
+     solas a los 90 dias para que la lista no crezca sin fin */
+  var g={},kk,lim=now()-90*86400000;
+  [(a&&a.gone)||{},(b&&b.gone)||{}].forEach(function(src){
+    for(kk in src) if(src[kk]>lim && (!g[kk]||src[kk]>g[kk])) g[kk]=src[kk];
+  });
+  out.gone=g;
+  ["dailies","areas","rewards"].forEach(function(k){
+    var L=pickList(nw,ol,k);
+    out[k]=(L&&L.filter)?L.filter(function(x){return !(x&&x.id&&g[x.id]);}):L;
+  });
   ["carry","settings","worldBonus","seenWorld"].forEach(function(k){ out[k]=(nw[k]!=null?nw[k]:a[k]); });
   var keys={}; Object.keys(a.days||{}).forEach(function(k){keys[k]=1;}); Object.keys((b&&b.days)||{}).forEach(function(k){keys[k]=1;});
   Object.keys(keys).forEach(function(k){
@@ -1738,11 +1759,16 @@ function addPool(){
   var d=day(); d.pool.push({id:uid(),text:t,area:S.area}); draft="";
   touchDay(); save(); focusId="draft"; focusPos=0; render();
 }
+/* Al borrar dejamos constancia del borrado, no solo quitamos la fila. Si no,
+   el otro aparato aun la tiene, la fusion la vuelve a meter y reaparece sola. */
+function bury(d,id){ d.gone=d.gone||{}; d.gone[id]=now(); }
 function removePool(id){
   var d=day();
   d.pool=(d.pool||[]).filter(function(x){return x.id!==id;});
   d.top3=(d.top3||[]).filter(function(x){return x!==id;});
   if(d.doneTop)delete d.doneTop[id];
+  d.extras=(d.extras||[]).filter(function(x){return x.poolId!==id;});
+  bury(d,id);
   touchDay(); save(); render();
 }
 function cycleArea(id){
@@ -1792,6 +1818,7 @@ function addDaily(){
 }
 function removeDaily(id){
   DB.dailies=(DB.dailies||[]).filter(function(d){return d.id!==id;});
+  DB.gone=DB.gone||{}; DB.gone[id]=now();
   save(); render();
 }
 function addExtra(){
@@ -1800,7 +1827,10 @@ function addExtra(){
   touchDay(); save(); focusId="extraDraft"; focusPos=0; render();
 }
 function removeExtra(id){
-  var d=day(); d.extras=(d.extras||[]).filter(function(x){return x.id!==id;});
+  var d=day();
+  (d.extras||[]).forEach(function(x){ if(x.id===id&&x.poolId) bury(d,x.poolId); });
+  d.extras=(d.extras||[]).filter(function(x){return x.id!==id;});
+  bury(d,id);
   touchDay(); save(); render();
 }
 /* lo que queda vivo al terminar un día: Las 3 sin marcar + todo lo del vaciado
@@ -2075,7 +2105,7 @@ function onClick(e){
   }
   else if(a==="toggle-add-reward"){S.addReward=!S.addReward;render();}
   else if(a==="add-reward")addReward();
-  else if(a==="remove-reward"){DB.rewards=(DB.rewards||[]).filter(function(r){return r.id!==id;});save();render();}
+  else if(a==="remove-reward"){DB.rewards=(DB.rewards||[]).filter(function(r){return r.id!==id;});DB.gone=DB.gone||{};DB.gone[id]=now();save();render();}
   else if(a==="sync-now"){syncNow(false);}
   else if(a==="copy-gid"){copyText(DB.sync.gistId,"ID copiado");}
   else if(a==="toggle-tok"){S.showTok=!S.showTok;render();}
