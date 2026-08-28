@@ -366,7 +366,43 @@
   .wel-f{font-size:12.5px;color:var(--faint);margin-top:22px;line-height:1.6}
 
   .foot{text-align:center;font-size:11.5px;color:var(--faint);margin-top:36px;line-height:1.6}
-  @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} }
+
+  /* ---- metas / objetivos ---- */
+  .goal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 14px 13px;margin-bottom:10px}
+  .goal.done{opacity:.62}
+  .goal-top{display:flex;align-items:flex-start;gap:9px}
+  .goal-t{flex:1;min-width:0;font-size:15.5px;font-weight:700;color:var(--text);line-height:1.32;word-break:break-word}
+  .cd{flex-shrink:0;display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.2px}
+  .cd.far{background:var(--teal-soft);color:var(--teal)}
+  .cd.mid{background:var(--amber-soft);color:var(--amber)}
+  .cd.near{background:rgba(201,128,90,.16);color:var(--clay)}
+  .cd.past{background:var(--surface2);color:var(--faint)}
+  .gsub{font-size:12px;color:var(--faint);margin-top:7px}
+  .gbar{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;margin:11px 0 0}
+  .gbar i{display:block;height:100%;border-radius:5px;min-width:2px;transition:width .3s ease}
+  .gmeta{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--muted);margin-top:7px;flex-wrap:wrap}
+  .gmeta b{color:var(--text);font-family:var(--mono)}
+  .dots7{display:flex;gap:3px;margin:12px 0 0}
+  .dots7 i{flex:1;height:6px;border-radius:3px;background:var(--surface2)}
+  .dots7 i.on{background:var(--sage)}
+  .ask2{display:flex;align-items:center;gap:9px;margin-top:11px}
+  .ask2 .q{flex:1;min-width:0;font-size:12.5px;color:var(--muted)}
+  .yn{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--faint);background:transparent;color:var(--muted);font-family:var(--sans)}
+  .yn.si.on{background:var(--sage);border-color:var(--sage);color:var(--bg)}
+  .glog{margin-top:12px;display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--border);padding-top:11px}
+  .glog-i{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted);line-height:1.4}
+  .glog-i .gd{flex-shrink:0;font-family:var(--mono);font-size:10.5px;color:var(--faint);width:42px;padding-top:1px}
+  .glog-i .gtag{flex-shrink:0;color:var(--teal);font-size:12px;padding-top:1px}
+  .glog-i .gt{flex:1;min-width:0;word-break:break-word}
+  .glog-more{font-size:12px;color:var(--faint);font-style:italic;padding-left:50px}
+  .gtoggle{margin-top:12px;display:inline-flex;align-items:center;gap:6px}
+  .gpanel{margin-top:12px;padding-top:13px;border-top:1px solid var(--border)}
+  .ghint{font-size:12px;color:var(--faint);margin:12px 0 8px;line-height:1.45}
+  .gfield{margin-top:12px}
+  .gfield label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+  .gfield input[type=date]{width:100%}
+
+  @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} .yn{padding:8px 11px} .tab span{font-size:9.5px} }
 </style>
 </head>
 <body>
@@ -401,7 +437,9 @@ var IC={
   chev:function(s){return svg('<path d="m6 9 6 6 6-6"/>',s);},
   user:function(s){return svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',s);},
   spark:function(s){return svg('<path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.6 5.6 2.8 2.8"/><path d="m15.6 15.6 2.8 2.8"/><path d="m18.4 5.6-2.8 2.8"/><path d="m8.4 15.6-2.8 2.8"/>',s);},
-  gift:function(s){return svg('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',s);}
+  gift:function(s){return svg('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',s);},
+  flag:function(s){return svg('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',s);},
+  note:function(s){return svg('<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',s);}
 };
 
 /* ============ almacenamiento por capas ============ */
@@ -488,7 +526,7 @@ var WORLDS=[
 function emptyDB(){
   return {v:2,u:now(),
     dailies:DAILIES_DEFAULT.slice(),
-    days:{}, carry:[],
+    days:{}, carry:[], metas:[],
     areas:AREAS_DEFAULT.slice(),
     rewards:REWARDS_DEFAULT.slice(),
     purchases:[],
@@ -950,7 +988,7 @@ function gh(path,opts){
 
 function payload(){
   return {v:2,u:DB.u,dailies:DB.dailies,days:DB.days,carry:DB.carry,areas:DB.areas,
-          rewards:DB.rewards,purchases:DB.purchases,settings:DB.settings,
+          rewards:DB.rewards,purchases:DB.purchases,settings:DB.settings,metas:DB.metas||[],
           worldBonus:DB.worldBonus||0,seenWorld:DB.seenWorld||1,gone:DB.gone||{}};
 }
 function dayFilled(d){
@@ -1043,8 +1081,32 @@ function mergeDB(a,b){
   (a.purchases||[]).concat((b&&b.purchases)||[]).forEach(function(p){ if(p&&p.id&&!seen[p.id]){seen[p.id]=1;pu.push(p);} });
   pu.sort(function(x,y){return String(x.date).localeCompare(String(y.date));});
   out.purchases=pu;
+  out.metas=mergeMetas(a.metas,(b&&b.metas),g);
   out.u=Math.max((a&&a.u)||0,(b&&b.u)||0);
   return out;
+}
+/* fusiona una misma meta vista por dos aparatos: gana el mas reciente en las
+   cifras, pero se unen los dias marcados y el registro de acciones para no
+   perder nada de ninguno. Las metas borradas (lapida en gone) no vuelven. */
+function mergeMeta(a,b){
+  var base=((b.u||0)>(a.u||0))?b:a, other=(base===b)?a:b, out={},k;
+  for(k in base)out[k]=base[k];
+  out.checks=mergeFlags(base.checks,other.checks);
+  var se={},log=[];
+  (base.log||[]).concat(other.log||[]).forEach(function(x){ if(x&&x.id&&!se[x.id]){se[x.id]=1;log.push(x);} });
+  log.sort(function(x,y){return String(x.date).localeCompare(String(y.date));});
+  out.log=log;
+  out.u=Math.max(base.u||0,other.u||0);
+  return out;
+}
+function mergeMetas(la,lb,gone){
+  var by={},order=[];
+  function take(list){ (list||[]).forEach(function(m){
+    if(!m||!m.id||(gone&&gone[m.id]))return;
+    if(!by[m.id]){by[m.id]=m;order.push(m.id);} else by[m.id]=mergeMeta(by[m.id],m);
+  }); }
+  take(la); take(lb);
+  return order.map(function(id){return by[id];});
 }
 
 function syncNow(silent){
@@ -1097,8 +1159,10 @@ function syncLabel(){
 var S={tab:"hoy",mode:"am",ready:false,editDailies:false,editAreas:false,copied:false,
        area:"neg",extraArea:"neg",selDay:null,openDay:null,addReward:false,shopMsg:"",
        acc:{},confirmBuy:null,bought:null,worldUp:null,justClosed:false,
-       nameDraft:"",welGame:true};
+       nameDraft:"",welGame:true,
+       addMeta:false,metaArea:"neg",metaEdit:null,metaConfirmDel:null};
 var draft="",dailyDraft="",extraDraft="",rwName="",rwCost="";
+var metaTitle="",metaTarget="",metaCurrent="",metaUnit="",metaDeadline="",metaNote="",metaCur="";
 var toastMsg="",toastT=null;
 
 function toast(m){
@@ -1211,6 +1275,7 @@ function quoteHtml(){
 function renderAM(){
   var d=day(),h='';
   h+='<p class="intro">Vacía la cabeza. Elige 3. Marca las que sean extra. Pon una hora de cierre real y respétala.</p>';
+  h+=metasHoyBlock();
 
   var pending=(d.pool||[]).filter(function(p){return p.from;});
   var pool='';
@@ -1285,6 +1350,7 @@ function renderPM(){
   var d=day(),h='',p=dayPoints(d);
   if(!d.closed){
     h+='<p class="intro pm">Marca lo hecho. Apunta lo extra. Lo que sobra pasa a mañana. Luego se cierra y se acabó.</p>';
+    h+=metasHoyBlock();
 
     var rows='';
     if(!(d.top3||[]).length)rows+='<div class="empty">No elegiste Las 3 esta mañana.</div>';
@@ -1645,8 +1711,270 @@ function renderAjustes(){
   return h;
 }
 
+/* ============ METAS / OBJETIVOS ============
+   Objetivos a medio y largo plazo, con cuenta regresiva, progreso numerico
+   opcional, y un check-in diario ("avance hoy?") que va formando un registro
+   de acciones. Viven en DB.metas y viajan por el mismo Gist. No tocan la
+   logica del dia: solo leen las tareas ya marcadas para poder engancharlas. */
+function metaById(id){ return (DB.metas||[]).filter(function(m){return m.id===id;})[0]||null; }
+function activeMetas(){ return (DB.metas||[]).filter(function(m){return !m.done;}); }
+function metaTouch(m){ m.u=now(); }
+/* dias desde hoy hasta la fecha limite (negativo si ya paso) */
+function daysTo(k){
+  if(!k)return null;
+  return Math.round((dateOfKey(k).getTime()-dateOfKey(todayKey()).getTime())/86400000);
+}
+function metaCountdown(m){
+  var n=daysTo(m.deadline);
+  if(n==null)return null;
+  var cls=n<0?"past":n<=7?"near":n<=30?"mid":"far",label;
+  if(n<0)label="Venció hace "+(-n)+(n===-1?" día":" días");
+  else if(n===0)label="Vence hoy";
+  else label="Quedan "+n+(n===1?" día":" días");
+  return {n:n,cls:cls,label:label};
+}
+/* lee cifras en formato es-ES: el punto es separador de miles y la coma decimal.
+   "10.000" -> 10000, "6.200,5" -> 6200.5 */
+function parseNum(s){
+  s=String(s==null?"":s).replace(/[^0-9.,\-]/g,"").replace(/\./g,"").replace(/,/g,".");
+  var v=parseFloat(s); return isNaN(v)?null:v;
+}
+/* formato es-ES manual (miles con punto, decimales con coma) para que salga
+   igual en cualquier navegador, sin depender de los datos de idioma del motor */
+function fmtN(v){
+  v=Number(v)||0; var neg=v<0; v=Math.abs(v);
+  var r=Math.round(v*100)/100, ip=Math.floor(r), dec=Math.round((r-ip)*100);
+  var s=String(ip).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+  if(dec>0)s+=","+(dec<10?"0"+dec:dec);
+  return (neg?"-":"")+s;
+}
+function withUnit(v,m){ var u=(m&&m.unit||"").trim(); return u?(fmtN(v)+" "+u):fmtN(v); }
+function metaProgress(m){
+  if(!m||!m.numeric)return null;
+  var start=Number(m.start)||0,target=Number(m.target)||0,cur=Number(m.current)||0;
+  var span=target-start,adv=cur-start;
+  var pct=span!==0?clamp(Math.round((adv/span)*100),0,100):(cur>=target?100:0);
+  var left=target-cur, reached=(span>=0)?(cur>=target):(cur<=target);
+  if(reached)left=0;
+  var rate=null,n=daysTo(m.deadline);
+  if(n&&n>0&&!reached&&left>0)rate=left/n;
+  return {pct:pct,left:left,rate:rate,reached:reached};
+}
+function metaDays(m){ return Object.keys(m.checks||{}).length; }
+function metaStreak(m){
+  var n=0,d=new Date();d.setHours(12,0,0,0);
+  for(var i=0;i<400;i++){ if((m.checks||{})[keyOf(d)])n++; else break; d.setDate(d.getDate()-1); }
+  return n;
+}
+/* tareas que hoy has dado por hechas, para poder engancharlas a una meta */
+function doneTasksToday(){
+  var d=day(),out=[];
+  (d.top3||[]).forEach(function(id){ if((d.doneTop||{})[id]){var p=poolById(d,id); if(p)out.push({id:id,text:p.text});} });
+  (DB.dailies||[]).forEach(function(x){ if((d.doneDaily||{})[x.id])out.push({id:x.id,text:x.text}); });
+  (d.extras||[]).forEach(function(x){ out.push({id:x.id,text:x.text}); });
+  return out;
+}
+
+function addMeta(){
+  var t=String(metaTitle||"").trim();
+  if(!t){toast("Ponle un nombre a la meta.");return;}
+  var m={id:uid(),title:t.slice(0,90),area:S.metaArea||((DB.areas[0]||{}).id||"neg"),
+    deadline:String(metaDeadline||"").trim(),numeric:false,start:0,target:0,current:0,unit:"",
+    checks:{},log:[],createdAt:now(),done:false,u:now()};
+  var tg=parseNum(metaTarget);
+  if(tg!=null&&tg!==0){
+    m.numeric=true; m.target=tg;
+    var cu=parseNum(metaCurrent); m.current=(cu==null?0:cu); m.start=0;
+    m.unit=String(metaUnit||"").trim().slice(0,6);
+  }
+  DB.metas=DB.metas||[]; DB.metas.push(m);
+  metaTitle="";metaTarget="";metaCurrent="";metaUnit="";metaDeadline="";
+  S.addMeta=false; save(); render();
+}
+function toggleMetaToday(id){
+  var m=metaById(id); if(!m)return; m.checks=m.checks||{};
+  var k=todayKey();
+  if(m.checks[k]){ delete m.checks[k]; }
+  else{ m.checks[k]=1; S.metaEdit=id; }  /* al marcar Sí, abre el panel para apuntar qué hiciste */
+  metaTouch(m); save(); render();
+}
+function saveMetaCurrent(id){
+  var m=metaById(id); if(!m)return;
+  var v=parseNum(metaCur); if(v==null){toast("Escribe un número.");return;}
+  m.current=v; if(!m.numeric){ m.numeric=true; if(!m.target)m.target=v; }
+  metaCur=""; metaTouch(m); save(); render();
+}
+function addMetaNote(id){
+  var m=metaById(id); if(!m)return;
+  var t=String(metaNote||"").trim(); if(!t)return;
+  m.log=m.log||[]; m.log.push({id:uid(),date:todayKey(),text:t.slice(0,140)});
+  m.checks=m.checks||{}; m.checks[todayKey()]=1;
+  metaNote=""; metaTouch(m); focusId="metaNote"; focusPos=0; save(); render();
+}
+function toggleAttach(id,taskId){
+  var m=metaById(id); if(!m)return; m.log=m.log||[];
+  var k=todayKey();
+  var ex=m.log.filter(function(x){return x.taskId===taskId&&x.date===k;})[0];
+  if(ex){ m.log=m.log.filter(function(x){return x!==ex;}); }
+  else{
+    var dt=doneTasksToday().filter(function(x){return x.id===taskId;})[0];
+    if(!dt)return;
+    m.log.push({id:uid(),date:k,text:dt.text,taskId:taskId});
+    m.checks=m.checks||{}; m.checks[k]=1;
+  }
+  metaTouch(m); save(); render();
+}
+function removeMetaLog(mid,lid){
+  var m=metaById(mid); if(!m)return;
+  m.log=(m.log||[]).filter(function(x){return x.id!==lid;});
+  metaTouch(m); save(); render();
+}
+function setMetaDeadline(id,v){
+  var m=metaById(id); if(!m)return;
+  m.deadline=String(v||"").trim(); metaTouch(m); save(); render();
+}
+function archiveMeta(id){
+  var m=metaById(id); if(!m)return;
+  m.done=!m.done; if(m.done)S.metaEdit=null; metaTouch(m); save(); render();
+}
+function removeMeta(id){
+  DB.metas=(DB.metas||[]).filter(function(m){return m.id!==id;});
+  DB.gone=DB.gone||{}; DB.gone[id]=now();
+  S.metaEdit=null; S.metaConfirmDel=null; save(); render();
+}
+
+/* tarjeta completa de una meta (pestaña Metas) */
+function metaCard(m){
+  var cd=metaCountdown(m),pr=metaProgress(m),area=areaById(m.area);
+  var k=todayKey(),onToday=!!(m.checks||{})[k],editing=(S.metaEdit===m.id),arch=m.done;
+  var h='<div class="goal'+(arch?" done":"")+'">';
+  h+='<div class="goal-top"><i class="cdot" style="background:'+area.color+';margin-top:6px"></i>'+
+     '<span class="goal-t">'+esc(m.title)+'</span>'+
+     (cd?'<span class="cd '+cd.cls+'">'+esc(cd.label)+'</span>':'')+'</div>';
+  if(m.deadline) h+='<div class="gsub">Fecha límite · '+esc(prettyDate(m.deadline))+'</div>';
+  if(pr){
+    h+='<div class="gbar"><i style="width:'+pr.pct+'%;background:'+area.color+'"></i></div>'+
+       '<div class="gmeta"><span>Vas por <b>'+esc(withUnit(m.current,m))+'</b> de <b>'+esc(withUnit(m.target,m))+'</b></span><span>'+pr.pct+'%</span></div>'+
+       '<div class="gmeta" style="margin-top:4px"><span>'+(pr.reached?'🎯 Meta alcanzada':'Te faltan <b>'+esc(withUnit(pr.left,m))+'</b>')+'</span>'+
+       (pr.rate?'<span>ritmo: <b>'+esc(withUnit(Math.ceil(pr.rate),m))+'</b>/día</span>':'')+'</div>';
+  }
+  if(!arch){
+    h+='<div class="dots7">';
+    lastNDays(7).forEach(function(dk){ h+='<i class="'+((m.checks||{})[dk]?"on":"")+'"></i>'; });
+    h+='</div>';
+    var nd=metaDays(m);
+    h+='<div class="ask2"><span class="q">'+nd+(nd===1?' día':' días')+' avanzando · racha '+metaStreak(m)+'</span>'+
+       '<button class="yn si'+(onToday?" on":"")+'" data-action="meta-today" data-id="'+m.id+'">'+(onToday?IC.check(14)+" Avancé":"¿Avancé hoy?")+'</button></div>';
+  }
+  /* registro de acciones */
+  var log=(m.log||[]).slice().reverse();
+  if(log.length){
+    h+='<div class="glog">';
+    log.slice(0,editing?40:4).forEach(function(x){
+      h+='<div class="glog-i"><span class="gd">'+esc(shortDate(x.date))+'</span>'+
+         (x.taskId?'<span class="gtag">✓</span>':'')+
+         '<span class="gt">'+esc(x.text)+'</span>'+
+         (editing?'<button class="ghostx" data-action="meta-log-del" data-id="'+m.id+'" data-log="'+x.id+'">'+IC.x(13)+'</button>':'')+
+         '</div>';
+    });
+    if(!editing&&log.length>4) h+='<div class="glog-more">y '+(log.length-4)+' más…</div>';
+    h+='</div>';
+  }
+  if(!arch){
+    h+='<button class="minibtn ghost gtoggle" data-action="meta-edit" data-id="'+m.id+'">'+(editing?"Cerrar":IC.note(13)+" Apuntar / editar")+'</button>';
+    if(editing){
+      h+='<div class="gpanel">';
+      /* apuntar qué hiciste */
+      h+='<div class="row"><input id="metaNote" class="inp sm" placeholder="¿Qué hiciste hacia esto?" value="'+esc(metaNote)+'"/>'+
+         '<button class="iconbtn" data-action="meta-note" data-id="'+m.id+'">'+IC.plus(18)+'</button></div>';
+      /* enganchar desde lo hecho hoy */
+      var dts=doneTasksToday();
+      if(dts.length){
+        h+='<div class="ghint">Sumar desde lo que ya marcaste hecho hoy:</div><div class="chips">';
+        dts.forEach(function(dt){
+          var on=(m.log||[]).some(function(x){return x.taskId===dt.id&&x.date===k;});
+          h+='<button class="chip'+(on?" on":"")+'" data-action="meta-attach" data-id="'+m.id+'" data-task="'+dt.id+'"'+(on?' style="border-color:'+area.color+'"':'')+'>'+
+             (on?'✓ ':'+ ')+esc(dt.text.length>34?dt.text.slice(0,32)+"…":dt.text)+'</button>';
+        });
+        h+='</div>';
+      }
+      /* cifra */
+      h+='<div class="row" style="margin-top:10px"><input id="metaCur" class="inp sm" inputmode="decimal" placeholder="'+(m.numeric?"Actualizar valor (ahora "+esc(withUnit(m.current,m))+")":"Poner un valor numérico")+'" value="'+esc(metaCur)+'"/>'+
+         '<button class="iconbtn teal" data-action="meta-cur" data-id="'+m.id+'">'+IC.check(18)+'</button></div>';
+      /* fecha limite */
+      h+='<div class="gfield"><label>Fecha límite</label><input type="date" class="inp sm" data-mdl="'+m.id+'" value="'+esc(m.deadline||"")+'"/></div>';
+      /* zona de control */
+      h+='<div class="btnrow" style="margin-top:12px">'+
+         '<button data-action="meta-archive" data-id="'+m.id+'">'+IC.trophy(15)+' Conseguida</button>'+
+         (S.metaConfirmDel===m.id
+            ?'<button class="dgr" data-action="meta-remove" data-id="'+m.id+'">Sí, borrar</button><button data-action="meta-remove-cancel">No</button>'
+            :'<button class="dgr" data-action="meta-remove-ask" data-id="'+m.id+'">'+IC.trash(15)+' Borrar</button>')+
+         '</div>';
+      h+='</div>';
+    }
+  }else{
+    h+='<div class="btnrow" style="margin-top:12px"><button data-action="meta-archive" data-id="'+m.id+'">Reactivar</button></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function renderMetas(){
+  var h='<div class="hdr"><div><div class="kicker">Metas</div><div class="htitle">Largo y medio plazo</div></div>'+
+    '<button class="minibtn" data-action="toggle-add-meta">'+(S.addMeta?"Cerrar":"+ Nueva")+'</button></div>';
+  if(S.addMeta){
+    var f='<div class="gfield"><label>¿Qué quieres lograr?</label>'+
+      '<input id="metaTitle" class="inp" placeholder="Ej. 10k netos en el banco" value="'+esc(metaTitle)+'"/></div>'+
+      areaChips(S.metaArea,"pick-meta-area")+
+      '<div class="gfield" style="margin-top:14px"><label>Fecha límite (opcional)</label>'+
+      '<input type="date" id="metaDeadline" class="inp sm" value="'+esc(metaDeadline)+'"/></div>'+
+      '<div class="ghint" style="margin-top:6px">Si le pones una cifra, te dice cuánto te falta y a qué ritmo. Si la dejas vacía, la meta va solo con la cuenta atrás y el «avancé hoy».</div>'+
+      '<div class="times" style="margin-top:10px">'+
+        '<label class="tfield"><span>Objetivo</span><input id="metaTarget" class="inp sm" inputmode="decimal" placeholder="10000" value="'+esc(metaTarget)+'"/></label>'+
+        '<label class="tfield"><span>Vas por</span><input id="metaCurrent" class="inp sm" inputmode="decimal" placeholder="0" value="'+esc(metaCurrent)+'"/></label>'+
+      '</div>'+
+      '<div class="gfield" style="margin-top:10px"><label>Unidad (opcional)</label>'+
+      '<input id="metaUnit" class="inp sm" placeholder="€, kg, clientes…" value="'+esc(metaUnit)+'"/></div>'+
+      '<button class="bigbtn am" style="margin-top:14px" data-action="add-meta">'+IC.flag(17)+' Crear meta</button>';
+    h+=section('Nueva meta','',f);
+  }
+  var act=activeMetas();
+  if(!act.length&&!S.addMeta){
+    h+='<div class="goal"><div class="empty" style="font-style:normal;padding:6px 2px">Aún no tienes metas. Crea una: un objetivo a semanas o meses vista, con su fecha límite y, si quieres, una cifra concreta. Cada día podrás marcar si avanzaste y engancharle lo que hiciste.</div>'+
+       '<button class="bigbtn am" style="margin-top:12px" data-action="toggle-add-meta">'+IC.plus(17)+' Crear tu primera meta</button></div>';
+  }
+  act.forEach(function(m){ h+=metaCard(m); });
+  var arch=(DB.metas||[]).filter(function(m){return m.done;});
+  if(arch.length){
+    var av=''; arch.forEach(function(m){ av+=metaCard(m); });
+    h+=section('Conseguidas y archivadas','Lo que ya cerraste. Se queda como registro.',av);
+  }
+  if(act.length) h+='<p class="intro calm">Las metas no se cierran a diario: se acercan. Marca cada día si avanzaste, aunque sea un paso pequeño, y deja que la cuenta atrás y el registro hagan el resto.</p>';
+  return h;
+}
+
+/* bloque compacto de metas para la vista Hoy (mañana y cierre) */
+function metasHoyBlock(){
+  var act=activeMetas(); if(!act.length)return '';
+  var inner='';
+  act.forEach(function(m){
+    var cd=metaCountdown(m),pr=metaProgress(m),area=areaById(m.area);
+    var on=!!(m.checks||{})[todayKey()];
+    inner+='<div class="goal">'+
+      '<div class="goal-top"><i class="cdot" style="background:'+area.color+';margin-top:6px"></i>'+
+      '<span class="goal-t">'+esc(m.title)+'</span>'+
+      (cd?'<span class="cd '+cd.cls+'">'+esc(cd.label)+'</span>':'')+'</div>'+
+      (pr?'<div class="gbar" style="margin-top:9px"><i style="width:'+pr.pct+'%;background:'+area.color+'"></i></div>'+
+          '<div class="gmeta" style="margin-top:5px"><span>'+(pr.reached?'🎯 Alcanzada':'Faltan <b>'+esc(withUnit(pr.left,m))+'</b>')+'</span><span>'+pr.pct+'%</span></div>':'')+
+      '<div class="ask2"><button class="yn si'+(on?" on":"")+'" data-action="meta-today" data-id="'+m.id+'">'+(on?IC.check(14)+" Avancé hoy":"¿Avancé hoy?")+'</button>'+
+      '<button class="minibtn teal" data-action="go-metas" data-id="'+m.id+'">Detalle</button></div>'+
+      '</div>';
+  });
+  return section("Tus metas","Un vistazo rápido a lo importante. El registro y la configuración están en la pestaña Metas.",inner);
+}
+
 /* ============ render principal ============ */
-var TABS=[{id:"hoy",n:"Hoy",i:"target"},{id:"hist",n:"Histórico",i:"cal"},{id:"prog",n:"Progreso",i:"trophy"},{id:"aj",n:"Ajustes",i:"gear"}];
+var TABS=[{id:"hoy",n:"Hoy",i:"target"},{id:"metas",n:"Metas",i:"flag"},{id:"hist",n:"Histórico",i:"cal"},{id:"prog",n:"Progreso",i:"trophy"},{id:"aj",n:"Ajustes",i:"gear"}];
 function visibleTabs(){
   return TABS.filter(function(t){ return t.id!=="prog"||gameOn(); });
 }
@@ -1733,6 +2061,7 @@ function render(){
   if(S.tab==="prog"&&!gameOn())S.tab="hoy";
   var h='';
   if(S.tab==="hoy")h=renderHoy();
+  else if(S.tab==="metas")h=renderMetas();
   else if(S.tab==="hist")h=renderHist();
   else if(S.tab==="prog")h=renderProg();
   else h=renderAjustes();
@@ -2008,6 +2337,7 @@ function onClick(e){
   var a=el.getAttribute("data-action"), id=el.getAttribute("data-id");
   if(a==="tab"){ S.tab=id; S.openDay=null; window.scrollTo(0,0); render(); return; }
   if(a==="go-ajustes"){ S.tab="aj"; window.scrollTo(0,0); render(); return; }
+  if(a==="go-metas"){ S.tab="metas"; if(id)S.metaEdit=id; window.scrollTo(0,0); render(); return; }
   if(a==="mode-am"){S.mode="am";render();}
   else if(a==="mode-pm"){S.mode="pm";render();}
   else if(a==="add-pool")addPool();
@@ -2106,6 +2436,19 @@ function onClick(e){
   else if(a==="toggle-add-reward"){S.addReward=!S.addReward;render();}
   else if(a==="add-reward")addReward();
   else if(a==="remove-reward"){DB.rewards=(DB.rewards||[]).filter(function(r){return r.id!==id;});DB.gone=DB.gone||{};DB.gone[id]=now();save();render();}
+  else if(a==="toggle-add-meta"){S.addMeta=!S.addMeta;render();}
+  else if(a==="pick-meta-area"){S.metaArea=id;render();}
+  else if(a==="add-meta")addMeta();
+  else if(a==="meta-today")toggleMetaToday(id);
+  else if(a==="meta-edit"){S.metaEdit=(S.metaEdit===id)?null:id;S.metaConfirmDel=null;metaNote="";metaCur="";render();}
+  else if(a==="meta-note")addMetaNote(id);
+  else if(a==="meta-cur")saveMetaCurrent(id);
+  else if(a==="meta-attach"){toggleAttach(id,el.getAttribute("data-task"));}
+  else if(a==="meta-log-del"){removeMetaLog(id,el.getAttribute("data-log"));}
+  else if(a==="meta-archive")archiveMeta(id);
+  else if(a==="meta-remove-ask"){S.metaConfirmDel=id;render();}
+  else if(a==="meta-remove-cancel"){S.metaConfirmDel=null;render();}
+  else if(a==="meta-remove")removeMeta(id);
   else if(a==="sync-now"){syncNow(false);}
   else if(a==="copy-gid"){copyText(DB.sync.gistId,"ID copiado");}
   else if(a==="toggle-tok"){S.showTok=!S.showTok;render();}
@@ -2126,8 +2469,16 @@ function onInput(e){
   else if(i==="rwCost")rwCost=t.value;
   else if(i==="welname")S.nameDraft=t.value;
   else if(i==="recDraft")recDraft=t.value;
+  else if(i==="metaTitle")metaTitle=t.value;
+  else if(i==="metaTarget")metaTarget=t.value;
+  else if(i==="metaCurrent")metaCurrent=t.value;
+  else if(i==="metaUnit")metaUnit=t.value;
+  else if(i==="metaDeadline")metaDeadline=t.value;
+  else if(i==="metaNote")metaNote=t.value;
+  else if(i==="metaCur")metaCur=t.value;
   else if(i==="tokinp"){ setToken(t.value.trim()); paintSyncDot(); }
   else if(i==="gidinp"){ DB.sync.gistId=t.value.trim(); sSet(KDB,DB); }
+  else if(t.getAttribute&&t.getAttribute("data-mdl")){ setMetaDeadline(t.getAttribute("data-mdl"),t.value); }
   else if(t.getAttribute&&t.getAttribute("data-area")){
     var aid=t.getAttribute("data-area");
     (DB.areas||[]).forEach(function(a){ if(a.id===aid)a.name=t.value; });
@@ -2144,12 +2495,16 @@ function onKeydown(e){
   else if(i==="welname"){e.preventDefault();var wl=document.getElementById("welname");
     DB.settings=DB.settings||{};DB.settings.game=!!S.welGame;setName(wl?wl.value:"");}
   else if(i==="nameinp"){e.preventDefault();var nx=document.getElementById("nameinp");setName(nx?nx.value:"");}
+  else if(i==="metaNote"){e.preventDefault();if(S.metaEdit)addMetaNote(S.metaEdit);}
+  else if(i==="metaCur"){e.preventDefault();if(S.metaEdit)saveMetaCurrent(S.metaEdit);}
 }
 function onChange(e){
   var i=e.target.id,d=day();
   if(i==="tstart"){ d.workStart=e.target.value||d.workStart; DB.settings.workStart=d.workStart; touchDay(); save(); render(); }
   else if(i==="tend"){ d.workEnd=e.target.value||d.workEnd; DB.settings.workEnd=d.workEnd; touchDay(); save(); render(); }
   else if(i==="impfile"){ if(e.target.files&&e.target.files[0]) importJSON(e.target.files[0]); }
+  else if(i==="metaDeadline"){ metaDeadline=e.target.value; }
+  else if(e.target.getAttribute&&e.target.getAttribute("data-mdl")){ setMetaDeadline(e.target.getAttribute("data-mdl"),e.target.value); }
 }
 document.addEventListener("click",onClick);
 document.addEventListener("input",onInput);
@@ -2221,6 +2576,7 @@ function boot(){
       DB.dailies=DB.dailies||[];
       DB.days=DB.days||{};
       DB.carry=DB.carry||[];
+      DB.metas=DB.metas||[];
     }else{
       var mig=migrateV1();
       if(mig){ DB=mig; toast("Datos anteriores recuperados"); }
