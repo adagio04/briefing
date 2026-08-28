@@ -1088,10 +1088,25 @@ function mergeDB(a,b){
 /* fusiona una misma meta vista por dos aparatos: gana el mas reciente en las
    cifras, pero se unen los dias marcados y el registro de acciones para no
    perder nada de ninguno. Las metas borradas (lapida en gone) no vuelven. */
+/* une dos mapas de {clave:timestamp} quedandose con el timestamp mas alto */
+function mergeTs(a,b){
+  var o={},k; a=a||{}; b=b||{};
+  for(k in a)o[k]=a[k];
+  for(k in b) if(!o[k]||b[k]>o[k]) o[k]=b[k];
+  return o;
+}
 function mergeMeta(a,b){
   var base=((b.u||0)>(a.u||0))?b:a, other=(base===b)?a:b, out={},k;
   for(k in base)out[k]=base[k];
-  out.checks=mergeFlags(base.checks,other.checks);
+  /* checks con lapida: cada dia marcado guarda cuando se marco (checks) y cada
+     dia desmarcado guarda cuando se quito (checksOff). Gana la accion mas
+     reciente, asi que quitar un avance se respeta aunque el otro aparato aun
+     lo tenga marcado. */
+  var onm=mergeTs(base.checks,other.checks), offm=mergeTs(base.checksOff,other.checksOff);
+  var lim=now()-90*86400000, fon={},foff={};
+  for(k in onm){ if(onm[k] && onm[k]>=(offm[k]||0)) fon[k]=onm[k]; }
+  for(k in offm){ if(offm[k]>=lim && offm[k]>(onm[k]||0)) foff[k]=offm[k]; }
+  out.checks=fon; out.checksOff=foff;
   var se={},log=[];
   (base.log||[]).concat(other.log||[]).forEach(function(x){ if(x&&x.id&&!se[x.id]){se[x.id]=1;log.push(x);} });
   log.sort(function(x,y){return String(x.date).localeCompare(String(y.date));});
@@ -1780,7 +1795,7 @@ function addMeta(){
   if(!t){toast("Ponle un nombre a la meta.");return;}
   var m={id:uid(),title:t.slice(0,90),area:S.metaArea||((DB.areas[0]||{}).id||"neg"),
     deadline:String(metaDeadline||"").trim(),numeric:false,start:0,target:0,current:0,unit:"",
-    checks:{},log:[],createdAt:now(),done:false,u:now()};
+    checks:{},checksOff:{},log:[],createdAt:now(),done:false,u:now()};
   var tg=parseNum(metaTarget);
   if(tg!=null&&tg!==0){
     m.numeric=true; m.target=tg;
@@ -1792,10 +1807,10 @@ function addMeta(){
   S.addMeta=false; save(); render();
 }
 function toggleMetaToday(id){
-  var m=metaById(id); if(!m)return; m.checks=m.checks||{};
+  var m=metaById(id); if(!m)return; m.checks=m.checks||{}; m.checksOff=m.checksOff||{};
   var k=todayKey();
-  if(m.checks[k]){ delete m.checks[k]; }
-  else{ m.checks[k]=1; S.metaEdit=id; }  /* al marcar Sí, abre el panel para apuntar qué hiciste */
+  if(m.checks[k]){ delete m.checks[k]; m.checksOff[k]=now(); }          /* lapida: quitar gana al merge */
+  else{ m.checks[k]=now(); delete m.checksOff[k]; S.metaEdit=id; }       /* al marcar Sí, abre el panel para apuntar qué hiciste */
   metaTouch(m); save(); render();
 }
 function saveMetaCurrent(id){
@@ -1808,7 +1823,7 @@ function addMetaNote(id){
   var m=metaById(id); if(!m)return;
   var t=String(metaNote||"").trim(); if(!t)return;
   m.log=m.log||[]; m.log.push({id:uid(),date:todayKey(),text:t.slice(0,140)});
-  m.checks=m.checks||{}; m.checks[todayKey()]=1;
+  m.checks=m.checks||{}; m.checksOff=m.checksOff||{}; m.checks[todayKey()]=now(); delete m.checksOff[todayKey()];
   metaNote=""; metaTouch(m); focusId="metaNote"; focusPos=0; save(); render();
 }
 function toggleAttach(id,taskId){
@@ -1820,7 +1835,7 @@ function toggleAttach(id,taskId){
     var dt=doneTasksToday().filter(function(x){return x.id===taskId;})[0];
     if(!dt)return;
     m.log.push({id:uid(),date:k,text:dt.text,taskId:taskId});
-    m.checks=m.checks||{}; m.checks[k]=1;
+    m.checks=m.checks||{}; m.checksOff=m.checksOff||{}; m.checks[k]=now(); delete m.checksOff[k];
   }
   metaTouch(m); save(); render();
 }
