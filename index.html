@@ -541,7 +541,7 @@ var DB=emptyDB();
 function newDay(k){
   var s=DB.settings||{};
   return {date:k,pool:[],top3:[],workStart:s.workStart||"09:30",workEnd:s.workEnd||"19:00",
-          doneTop:{},doneDaily:{},extras:[],closed:false,u:0};
+          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0};
 }
 function day(k){
   k=k||todayKey();
@@ -1012,6 +1012,10 @@ function mergeDay(da,db2){
   if(!dayFilled(da))return db2;
   if(!dayFilled(db2))return da;
   var base=((db2.u||0)>(da.u||0))?db2:da, other=(base===db2)?da:db2;
+  /* el ORDEN (vaciado y Las 3) lo decide el lado ordenado a mano mas
+     reciente (arr), no el simplemente modificado mas reciente (u). Asi el
+     arrastre automatico al abrir el otro aparato no pisa tu orden. */
+  var aBase=((db2.arr||0)>(da.arr||0))?db2:da, aOther=(aBase===db2)?da:db2;
   var out={},k;
   for(k in base) out[k]=base[k];
   /* lo borrado en cualquiera de los dos aparatos se queda borrado */
@@ -1020,7 +1024,7 @@ function mergeDay(da,db2){
   for(k in (other.gone||{})) if(!goneTs[k]||other.gone[k]>goneTs[k]) goneTs[k]=other.gone[k];
   out.gone=goneTs;
   var byId={},pool=[];
-  (base.pool||[]).concat(other.pool||[]).forEach(function(p){
+  (aBase.pool||[]).concat(aOther.pool||[]).forEach(function(p){
     if(!p||!p.id||byId[p.id]||gone[p.id])return; byId[p.id]=1; pool.push(p);
   });
   var seenT={},pool2=[];
@@ -1030,8 +1034,8 @@ function mergeDay(da,db2){
   });
   out.pool=pool2;
   var inPool={}; pool2.forEach(function(p){inPool[p.id]=1;});
-  var t3=(base.top3||[]).filter(function(id){return inPool[id];});
-  if(!t3.length) t3=(other.top3||[]).filter(function(id){return inPool[id];});
+  var t3=(aBase.top3||[]).filter(function(id){return inPool[id];});
+  if(!t3.length) t3=(aOther.top3||[]).filter(function(id){return inPool[id];});
   out.top3=t3.slice(0,3);
   var dt=mergeFlags(base.doneTop,other.doneTop);
   for(k in dt) if(gone[k]) delete dt[k];
@@ -1047,6 +1051,7 @@ function mergeDay(da,db2){
   out.harvested=!!(base.harvested||other.harvested);
   out.full=!!(base.full||other.full);
   out.u=Math.max(base.u||0,other.u||0);
+  out.arr=Math.max(da.arr||0,db2.arr||0);
   return out;
 }
 function pickList(newer,older,k){
@@ -2101,7 +2106,7 @@ function keepFocus(id){ var el=document.getElementById(id); focusId=id; focusPos
 function addPool(){
   var t=draft.trim(); if(!t)return;
   var d=day(); d.pool.push({id:uid(),text:t,area:S.area}); draft="";
-  touchDay(); save(); focusId="draft"; focusPos=0; render();
+  d.arr=now(); touchDay(); save(); focusId="draft"; focusPos=0; render();
 }
 /* Al borrar dejamos constancia del borrado, no solo quitamos la fila. Si no,
    el otro aparato aun la tiene, la fusion la vuelve a meter y reaparece sola. */
@@ -2113,12 +2118,12 @@ function removePool(id){
   if(d.doneTop)delete d.doneTop[id];
   d.extras=(d.extras||[]).filter(function(x){return x.poolId!==id;});
   bury(d,id);
-  touchDay(); save(); render();
+  d.arr=now(); touchDay(); save(); render();
 }
 function cycleArea(id){
   var d=day(),ids=(DB.areas||[]).map(function(a){return a.id;});
   (d.pool||[]).forEach(function(p){ if(p.id===id){ var i=ids.indexOf(p.area); p.area=ids[(i+1)%ids.length]; } });
-  touchDay(); save(); render();
+  d.arr=now(); touchDay(); save(); render();
 }
 function poolById(d,id){ return (d.pool||[]).filter(function(x){return x.id===id;})[0]||null; }
 function toggleTop(id){
@@ -2131,7 +2136,7 @@ function toggleTop(id){
     var p=poolById(d,id);
     if(p&&p.extra){ p.extra=false; dropExtraEntry(d,id); }
   }
-  touchDay(); save(); render();
+  d.arr=now(); touchDay(); save(); render();
 }
 function dropExtraEntry(d,poolId){
   d.extras=(d.extras||[]).filter(function(x){return x.poolId!==poolId;});
@@ -2145,7 +2150,7 @@ function toggleExtraPlan(id){
     var i=(d.top3||[]).indexOf(id);
     if(i>=0)d.top3.splice(i,1);
   }
-  touchDay(); save(); render();
+  d.arr=now(); touchDay(); save(); render();
 }
 /* por la tarde: dar por hecha (o no) una extra planificada */
 function toggleDoneExtra(id){
