@@ -60,6 +60,8 @@
 
   .section{margin-bottom:28px}
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px}
+  /* cuando el título no lleva texto de ayuda debajo, un poco de aire antes del bloque */
+  .sec-head + .row,.sec-head + .pool,.sec-head + .goal{margin-top:12px}
   .sec-label{font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text)}
   .hint{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5}
   .minibtn{background:transparent;border:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--amber);flex-shrink:0}
@@ -401,6 +403,8 @@
   .gfield{margin-top:12px}
   .gfield label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
   .gfield input[type=date]{width:100%}
+  .accsum{text-transform:none;font-weight:500;letter-spacing:0;color:var(--faint);font-size:12px;margin-left:9px;font-family:var(--mono)}
+  .section.acc.open .acc-head .accsum{color:var(--amber)}
 
   @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} .yn{padding:8px 11px} .tab span{font-size:9.5px} }
 </style>
@@ -1321,8 +1325,7 @@ function renderAM(){
     '<span class="lg l3"><b>1</b>Una de Las 3'+(gameOn()?' · 10 puntos':'')+'</span>'+
     '<span class="lg lx"><b>+</b>Tarea extra'+(gameOn()?' · 6 puntos':'')+'</span>'+
     '</div>';
-  h+=section('Vaciado mental',
-    'Suelta todo lo que llevas en la cabeza, sin filtrar. Después decide qué es de Las 3 y qué es extra. El cuadrado de color es el área.',pool);
+  h+=section('Vaciado mental','',pool);
 
   var slots='<div class="slots">';
   for(var i=0;i<3;i++){
@@ -1347,7 +1350,8 @@ function renderAM(){
     '<label class="tfield"><span>Empiezo</span><input type="time" id="tstart" value="'+esc(d.workStart)+'"/></label>'+
     '<label class="tfield accent"><span>Cierro</span><input type="time" id="tend" value="'+esc(d.workEnd)+'"/></label>'+
     '</div>'+bandHtml();
-  h+=section('Ventana de trabajo','El cierre no se gana terminando. Se decide ahora.',times);
+  h+=sectionAcc('homeVent','Ventana de trabajo<span class="accsum">'+esc(d.workStart)+' → '+esc(d.workEnd)+'</span>',
+    'El cierre no se gana terminando. Se decide ahora.',times);
 
   var dl='<div class="dailies">';
   (DB.dailies||[]).forEach(function(x){
@@ -1355,7 +1359,8 @@ function renderAM(){
   });
   if(!(DB.dailies||[]).length) dl+='<div class="empty">Ninguna. Se editan en Ajustes.</div>';
   dl+='</div>';
-  h+=section('Diarias fijas','Lo que se comprueba sí o sí.',dl,
+  var nDailies=(DB.dailies||[]).length;
+  h+=sectionAcc('homeDailies','Diarias fijas<span class="accsum">'+nDailies+'</span>','Lo que se comprueba sí o sí.',dl,
     '<button class="minibtn ghost" data-action="go-ajustes">Editar</button>');
 
   if(notebookOn()){
@@ -1990,7 +1995,7 @@ function metasHoyBlock(){
       '<button class="minibtn teal" data-action="go-metas" data-id="'+m.id+'">Detalle</button></div>'+
       '</div>';
   });
-  return section("Tus metas","Un vistazo rápido a lo importante. El registro y la configuración están en la pestaña Metas.",inner);
+  return section("Tus metas","",inner);
 }
 
 /* ============ render principal ============ */
@@ -2326,7 +2331,17 @@ function recoverHtml(k){
        '<span class="rec-b">'+(on?IC.check(13):'')+'</span>'+
        '<span class="rec-t">'+esc(x.text)+'</span><span class="rec-k">Diaria</span></button>';
   });
-  (d.extras||[]).forEach(function(x){
+  /* extras que dejaste planificados (el «+» del vaciado) y no marcaste: ahora
+     son marcables, por si los hiciste y no llegaste a apuntarlo */
+  (d.pool||[]).filter(function(p){return p.extra&&(d.top3||[]).indexOf(p.id)<0;}).forEach(function(p){
+    any=true;
+    var on=!!extraEntryOf(d,p.id);
+    h+='<button class="rec-i'+(on?' on':'')+'" data-action="rec-extra" data-id="'+p.id+'">'+
+       '<span class="rec-b">'+(on?IC.check(13):'')+'</span>'+
+       '<span class="rec-t">'+esc(p.text)+'</span><span class="rec-k">Extra</span></button>';
+  });
+  /* extras sueltos (los que añadiste a mano aquí abajo): quedan como hechos */
+  (d.extras||[]).filter(function(x){return !x.poolId;}).forEach(function(x){
     any=true;
     h+='<div class="rec-i on ex"><span class="rec-b">'+IC.check(13)+'</span>'+
        '<span class="rec-t">'+esc(x.text)+'</span><span class="rec-k">Extra</span></div>';
@@ -2410,6 +2425,20 @@ function onClick(e){
   }
   else if(a==="rec-daily"){
     var rd2=DB.days[S.intro.k]; if(rd2){ rd2.doneDaily=rd2.doneDaily||{}; if(rd2.doneDaily[id])delete rd2.doneDaily[id]; else rd2.doneDaily[id]=true; rd2.u=now(); }
+    render();
+  }
+  else if(a==="rec-extra"){
+    var rd5=DB.days[S.intro.k];
+    if(rd5){
+      var p5=poolById(rd5,id);
+      if(p5){
+        rd5.extras=rd5.extras||[];
+        var ex5=extraEntryOf(rd5,id);
+        if(ex5) rd5.extras=rd5.extras.filter(function(x){return x!==ex5;});
+        else rd5.extras.push({id:uid(),poolId:id,text:p5.text,area:p5.area,ts:now()});
+        rd5.u=now();
+      }
+    }
     render();
   }
   else if(a==="rec-add"){ recAdd(); }
