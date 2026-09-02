@@ -1041,16 +1041,23 @@ function mergeDay(da,db2){
   var t3=(aBase.top3||[]).filter(function(id){return inPool[id];});
   if(!t3.length) t3=(aOther.top3||[]).filter(function(id){return inPool[id];});
   out.top3=t3.slice(0,3);
-  var dt=mergeFlags(base.doneTop,other.doneTop);
-  for(k in dt) if(gone[k]) delete dt[k];
-  out.doneTop=dt;
-  out.doneDaily=mergeFlags(base.doneDaily,other.doneDaily);
+  var dtR=mergeDone(base.doneTop,other.doneTop,base.doneTopOff,other.doneTopOff);
+  var dt=dtR.on; for(k in dt) if(gone[k]) delete dt[k];
+  out.doneTop=dt; out.doneTopOff=dtR.off;
+  var ddR=mergeDone(base.doneDaily,other.doneDaily,base.doneDailyOff,other.doneDailyOff);
+  out.doneDaily=ddR.on; out.doneDailyOff=ddR.off;
+  var exOff=mergeTs(base.extrasOff,other.extrasOff);
   var se={},ex=[];
   (base.extras||[]).concat(other.extras||[]).forEach(function(x){
     if(!x)return; if(gone[x.id]||(x.poolId&&gone[x.poolId]))return;
-    var key=x.poolId||x.id; if(!key||se[key])return; se[key]=1; ex.push(x);
+    var key=x.poolId||x.id; if(!key||se[key])return;
+    /* si el extra se desmarco despues de crearse, no lo revivas */
+    if(exOff[key]&&exOff[key]>(x.ts||0)){ se[key]=1; return; }
+    se[key]=1; ex.push(x);
   });
   out.extras=ex;
+  var exLim=now()-90*86400000; out.extrasOff={};
+  for(k in exOff){ if(exOff[k]>=exLim) out.extrasOff[k]=exOff[k]; }
   out.closed=!!(base.closed||other.closed);
   out.harvested=!!(base.harvested||other.harvested);
   out.full=!!(base.full||other.full);
@@ -1103,6 +1110,17 @@ function mergeTs(a,b){
   for(k in a)o[k]=a[k];
   for(k in b) if(!o[k]||b[k]>o[k]) o[k]=b[k];
   return o;
+}
+/* fusiona un mapa de "hecho" (clave->cuando se marco) con su lapida de
+   "deshecho" (clave->cuando se quito): para cada clave gana la accion mas
+   reciente. Asi desmarcar una tarea se respeta aunque el Gist aun la tenga
+   marcada. Las lapidas viejas (90 dias) se olvidan solas. */
+function mergeDone(baseOn,otherOn,baseOff,otherOff){
+  var onm=mergeTs(baseOn,otherOn), offm=mergeTs(baseOff,otherOff);
+  var fon={},foff={},lim=now()-90*86400000,k;
+  for(k in onm){ if(onm[k] && onm[k]>=(offm[k]||0)) fon[k]=onm[k]; }
+  for(k in offm){ if(offm[k]>=lim && offm[k]>(onm[k]||0)) foff[k]=offm[k]; }
+  return {on:fon,off:foff};
 }
 function mergeMeta(a,b){
   var base=((b.u||0)>(a.u||0))?b:a, other=(base===b)?a:b, out={},k;
@@ -2160,9 +2178,9 @@ function toggleExtraPlan(id){
 /* por la tarde: dar por hecha (o no) una extra planificada */
 function toggleDoneExtra(id){
   var d=day(), p=poolById(d,id); if(!p)return;
-  d.extras=d.extras||[];
-  if(extraEntryOf(d,id)) dropExtraEntry(d,id);
-  else d.extras.push({id:uid(),poolId:id,text:p.text,area:p.area,ts:now()});
+  d.extras=d.extras||[]; d.extrasOff=d.extrasOff||{};
+  if(extraEntryOf(d,id)){ dropExtraEntry(d,id); d.extrasOff[id]=now(); }        /* lapida: no revivir en el merge */
+  else { d.extras.push({id:uid(),poolId:id,text:p.text,area:p.area,ts:now()}); delete d.extrasOff[id]; }
   touchDay(); save(); render();
 }
 function addDaily(){
@@ -2396,8 +2414,12 @@ function onClick(e){
     save(); render();
   }
   else if(a==="copy")copyText(briefingText(),"Copiado para la libreta");
-  else if(a==="toggle-done-top"){var d=day();d.doneTop=d.doneTop||{};d.doneTop[id]=!d.doneTop[id];touchDay();save();render();}
-  else if(a==="toggle-done-daily"){var d2=day();d2.doneDaily=d2.doneDaily||{};d2.doneDaily[id]=!d2.doneDaily[id];touchDay();save();render();}
+  else if(a==="toggle-done-top"){var d=day();d.doneTop=d.doneTop||{};d.doneTopOff=d.doneTopOff||{};
+    if(d.doneTop[id]){delete d.doneTop[id];d.doneTopOff[id]=now();}else{d.doneTop[id]=now();delete d.doneTopOff[id];}
+    touchDay();save();render();}
+  else if(a==="toggle-done-daily"){var d2=day();d2.doneDaily=d2.doneDaily||{};d2.doneDailyOff=d2.doneDailyOff||{};
+    if(d2.doneDaily[id]){delete d2.doneDaily[id];d2.doneDailyOff[id]=now();}else{d2.doneDaily[id]=now();delete d2.doneDailyOff[id];}
+    touchDay();save();render();}
   else if(a==="add-extra")addExtra();
   else if(a==="remove-extra")removeExtra(id);
   else if(a==="close-day")closeDay();
@@ -2420,11 +2442,13 @@ function onClick(e){
     render();
   }
   else if(a==="rec-top"){
-    var rd=DB.days[S.intro.k]; if(rd){ rd.doneTop=rd.doneTop||{}; if(rd.doneTop[id])delete rd.doneTop[id]; else rd.doneTop[id]=true; rd.u=now(); }
+    var rd=DB.days[S.intro.k]; if(rd){ rd.doneTop=rd.doneTop||{}; rd.doneTopOff=rd.doneTopOff||{};
+      if(rd.doneTop[id]){delete rd.doneTop[id];rd.doneTopOff[id]=now();}else{rd.doneTop[id]=now();delete rd.doneTopOff[id];} rd.u=now(); }
     render();
   }
   else if(a==="rec-daily"){
-    var rd2=DB.days[S.intro.k]; if(rd2){ rd2.doneDaily=rd2.doneDaily||{}; if(rd2.doneDaily[id])delete rd2.doneDaily[id]; else rd2.doneDaily[id]=true; rd2.u=now(); }
+    var rd2=DB.days[S.intro.k]; if(rd2){ rd2.doneDaily=rd2.doneDaily||{}; rd2.doneDailyOff=rd2.doneDailyOff||{};
+      if(rd2.doneDaily[id]){delete rd2.doneDaily[id];rd2.doneDailyOff[id]=now();}else{rd2.doneDaily[id]=now();delete rd2.doneDailyOff[id];} rd2.u=now(); }
     render();
   }
   else if(a==="rec-extra"){
@@ -2432,10 +2456,10 @@ function onClick(e){
     if(rd5){
       var p5=poolById(rd5,id);
       if(p5){
-        rd5.extras=rd5.extras||[];
+        rd5.extras=rd5.extras||[]; rd5.extrasOff=rd5.extrasOff||{};
         var ex5=extraEntryOf(rd5,id);
-        if(ex5) rd5.extras=rd5.extras.filter(function(x){return x!==ex5;});
-        else rd5.extras.push({id:uid(),poolId:id,text:p5.text,area:p5.area,ts:now()});
+        if(ex5){ rd5.extras=rd5.extras.filter(function(x){return x!==ex5;}); rd5.extrasOff[id]=now(); }
+        else { rd5.extras.push({id:uid(),poolId:id,text:p5.text,area:p5.area,ts:now()}); delete rd5.extrasOff[id]; }
         rd5.u=now();
       }
     }
