@@ -406,16 +406,15 @@
   .accsum{text-transform:none;font-weight:500;letter-spacing:0;color:var(--faint);font-size:12px;margin-left:9px;font-family:var(--mono)}
   .section.acc.open .acc-head .accsum{color:var(--amber)}
   /* ---- fichaje ---- */
-  .punch{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .punch{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 14px}
   .punch.on{border-color:var(--amber);background:var(--amber-soft)}
-  .punch-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
   .punch-k{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
   .punch.on .punch-k{color:var(--amber)}
-  .punch-time{font-size:27px;font-weight:700;color:var(--text);line-height:1}
+  .punch-time{font-size:30px;font-weight:700;color:var(--text);line-height:1.1;margin-top:3px}
   .punch.on .punch-time{color:var(--amber)}
-  .punch-sess{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .punch-elapsed{font-size:13.5px;color:var(--muted);margin-top:5px}
+  .punch-sess{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
   .punch-sess .ps{font-family:var(--mono);font-size:11px;color:var(--faint);background:var(--surface2);border-radius:6px;padding:3px 7px}
-  .punch-sess .ps.live{color:var(--amber);background:var(--amber-soft)}
 
   @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} .yn{padding:8px 11px} .tab span{font-size:9.5px} }
 </style>
@@ -638,6 +637,11 @@ function fmtDur(ms){
   if(h>0) return h+"h "+pad(m)+"m";
   if(m>0) return m+"m "+pad(ss)+"s";
   return ss+"s";
+}
+/* duración tranquila, solo horas y minutos (sin segundos) */
+function fmtHm(ms){
+  var min=Math.max(0,Math.floor(ms/60000)),h=Math.floor(min/60),m=min%60;
+  return h>0?(h+"h "+m+"m"):(m+"m");
 }
 function startPunch(){
   var d=day(); var p=punchOf(d);
@@ -1354,17 +1358,22 @@ function bandHtml(){
 }
 function hhmm(ts){ var x=new Date(ts); return pad(x.getHours())+":"+pad(x.getMinutes()); }
 function punchBlock(){
-  var d=day(),p=punchOf(d),on=!!p.open;
-  var h='<div class="punch'+(on?' on':'')+'">'+
-    '<div class="punch-top"><span class="punch-k">'+(on?"Trabajando":"Trabajado hoy")+'</span>'+
-      '<span class="punch-time mono" id="punchtime">'+fmtDur(punchMs(d))+'</span></div>'+
-    '<button class="bigbtn '+(on?"pm":"am")+'" data-action="'+(on?"punch-stop":"punch-start")+'" style="margin-top:0">'+
-      (on?IC.moon(17)+" Parar":IC.bolt(17)+" Empezar a trabajar")+'</button>';
+  var d=day(),p=punchOf(d),on=!!p.open,tot=punchMs(d);
+  var h='<div class="punch'+(on?' on':'')+'">';
+  if(on){
+    h+='<div class="punch-k">Trabajando desde</div>'+
+       '<div class="punch-time mono">'+hhmm(p.open)+'</div>'+
+       '<div class="punch-elapsed mono" id="punchelapsed">Llevas '+fmtHm(tot)+'</div>'+
+       '<button class="bigbtn pm" data-action="punch-stop" style="margin-top:13px">'+IC.moon(17)+' Parar</button>';
+  }else{
+    h+='<div class="punch-k">Trabajado hoy</div>'+
+       '<div class="punch-time mono">'+(tot>0?fmtHm(tot):"—")+'</div>'+
+       '<button class="bigbtn am" data-action="punch-start" style="margin-top:13px">'+IC.bolt(17)+' Empezar a trabajar</button>';
+  }
   var sess=(p.sessions||[]);
-  if(sess.length||on){
+  if(sess.length){
     h+='<div class="punch-sess">';
-    sess.slice(-4).forEach(function(s){ h+='<span class="ps">'+hhmm(s.s)+"–"+hhmm(s.e)+'</span>'; });
-    if(on) h+='<span class="ps live">desde '+hhmm(p.open)+'</span>';
+    sess.slice(-5).forEach(function(s){ h+='<span class="ps">'+hhmm(s.s)+"–"+hhmm(s.e)+'</span>'; });
     h+='</div>';
   }
   h+='</div>';
@@ -1561,7 +1570,7 @@ function renderPM(){
        '<div class="cstars">'+starsRow(u.stars,tn,16)+'</div>'+
        (gameOn()?'<p class="ctotal mono">+'+u.total+' puntos hoy</p>'
                 :'<p class="ctotal mono">'+u.total+' cosas hechas hoy</p>')+
-       (wms>60000?'<p class="ctotal mono">'+fmtDur(wms)+' fichados hoy</p>':'')+
+       (wms>60000?'<p class="ctotal mono">'+fmtHm(wms)+' fichados hoy</p>':'')+
        '<div class="clines">';
     lines.forEach(function(t,i){
       h+='<p class="cl" style="animation-delay:'+(0.55+i*0.32)+'s">'+IC.spark(13)+'<span>'+esc(t)+'</span></p>';
@@ -1663,7 +1672,7 @@ function renderHist(){
         });
       }
       var wms=punchMs(d);
-      if(wms>60000) list+='<div class="hint" style="margin:10px 0 7px">Fichaje · '+fmtDur(wms)+' trabajados</div>';
+      if(wms>60000) list+='<div class="hint" style="margin:10px 0 7px">Fichaje · '+fmtHm(wms)+' trabajados</div>';
       list+='<div class="readout"><span class="rv">'+p.base+' esenciales · '+p.extra+' extra</span>'+
             '<span class="rv">'+(d.closed?'Día cerrado':'Sin cerrar')+'</span></div>';
       list+='</div>';
@@ -2801,12 +2810,12 @@ function boot(){
   });
 }
 
-/* reloj vivo del fichaje: actualiza el cronómetro mientras trabajas */
+/* "Llevas Xh Ym" se refresca tranquilo cada minuto, sin segundos */
 setInterval(function(){
   if(S.tab!=="hoy")return;
-  var el=document.getElementById("punchtime");
-  if(el&&punchActive(day())) el.textContent=fmtDur(punchMs(day()));
-},1000);
+  var el=document.getElementById("punchelapsed");
+  if(el&&punchActive(day())) el.textContent="Llevas "+fmtHm(punchMs(day()));
+},60000);
 
 /* cambio de día con el archivo abierto */
 var bootDay=todayKey();
