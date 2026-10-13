@@ -405,6 +405,17 @@
   .gfield input[type=date]{width:100%}
   .accsum{text-transform:none;font-weight:500;letter-spacing:0;color:var(--faint);font-size:12px;margin-left:9px;font-family:var(--mono)}
   .section.acc.open .acc-head .accsum{color:var(--amber)}
+  /* ---- fichaje ---- */
+  .punch{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .punch.on{border-color:var(--amber);background:var(--amber-soft)}
+  .punch-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .punch-k{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .punch.on .punch-k{color:var(--amber)}
+  .punch-time{font-size:27px;font-weight:700;color:var(--text);line-height:1}
+  .punch.on .punch-time{color:var(--amber)}
+  .punch-sess{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .punch-sess .ps{font-family:var(--mono);font-size:11px;color:var(--faint);background:var(--surface2);border-radius:6px;padding:3px 7px}
+  .punch-sess .ps.live{color:var(--amber);background:var(--amber-soft)}
 
   @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} .yn{padding:8px 11px} .tab span{font-size:9.5px} }
 </style>
@@ -534,7 +545,7 @@ function emptyDB(){
     areas:AREAS_DEFAULT.slice(),
     rewards:REWARDS_DEFAULT.slice(),
     purchases:[],
-    settings:{workStart:"09:30",workEnd:"19:00",quote:true,game:true,notebook:true,name:""},
+    settings:{workStart:"09:30",workEnd:"19:00",quote:true,game:true,notebook:true,name:"",topMax:3},
     worldBonus:0, seenWorld:1,
     gone:{},
     sync:{gistId:"",lastSync:0}
@@ -545,7 +556,7 @@ var DB=emptyDB();
 function newDay(k){
   var s=DB.settings||{};
   return {date:k,pool:[],top3:[],workStart:s.workStart||"09:30",workEnd:s.workEnd||"19:00",
-          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0};
+          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0,punch:{open:0,sessions:[]}};
 }
 function day(k){
   k=k||todayKey();
@@ -574,6 +585,38 @@ function areaColor(id){return areaById(id).color;}
 function gameOn(){ return !(DB.settings&&DB.settings.game===false); }
 function notebookOn(){ return !(DB.settings&&DB.settings.notebook===false); }
 function userName(){ return (DB.settings&&DB.settings.name)?String(DB.settings.name).trim():""; }
+/* tope de tareas esenciales (3 a 5), por defecto 3 */
+function topMax(){ return clamp((DB.settings&&DB.settings.topMax)||3,3,5); }
+function topLabel(){ return topMax()===3?"Las 3 de hoy":"Esenciales de hoy"; }
+
+/* ============ fichaje (picar) ============ */
+function punchOf(d){ d=d||day(); if(!d.punch)d.punch={open:0,sessions:[]}; return d.punch; }
+function punchActive(d){ return !!punchOf(d).open; }
+/* milisegundos trabajados en el día, incluyendo la sesión en curso */
+function punchMs(d){
+  var p=punchOf(d),ms=0;
+  (p.sessions||[]).forEach(function(s){ if(s&&s.s&&s.e&&s.e>s.s) ms+=s.e-s.s; });
+  if(p.open) ms+=Math.max(0,now()-p.open);
+  return ms;
+}
+function fmtDur(ms){
+  var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
+  if(h>0) return h+"h "+pad(m)+"m";
+  if(m>0) return m+"m "+pad(ss)+"s";
+  return ss+"s";
+}
+function startPunch(){
+  var d=day(); var p=punchOf(d);
+  if(p.open)return;
+  p.open=now(); touchDay(); save(); render();
+}
+function stopPunch(){
+  var d=day(); var p=punchOf(d);
+  if(!p.open)return;
+  var s=p.open, e=now();
+  if(e>s) (p.sessions=p.sessions||[]).push({s:s,e:e});
+  p.open=0; touchDay(); save(); render();
+}
 
 /* ============ ¿salió todo lo que había marcado? ============ */
 function dayComplete(d){
@@ -661,9 +704,10 @@ function closingLines(){
   }
   var st=activeStreak();
   if(st>=2) L.push("Van "+st+" días seguidos apareciendo por aquí.");
-  if(c.stars===3) L.push("Las 3, las tres. Día redondo.");
-  else if(c.stars>0) L.push(c.stars+" de Las 3 fuera. Lo que queda vuelve mañana sin drama.");
-  else L.push("Hoy no cayó ninguna de Las 3, y el día sigue contando igual.");
+  var tn=(d.top3||[]).length;
+  if(tn>0&&c.stars===tn) L.push(tn===3?"Las 3, las tres. Día redondo.":"Pleno de esenciales ("+tn+"/"+tn+"). Día redondo.");
+  else if(c.stars>0) L.push(c.stars+" de "+(tn||3)+" esenciales. Lo que queda vuelve mañana sin drama.");
+  else L.push("Hoy no cayó ninguna esencial, y el día sigue contando igual.");
   if(c.extra===1) L.push("Y una cosa de más que no te pedía nadie.");
   else if(c.extra>1) L.push("Y "+c.extra+" cosas de más que no te pedía nadie.");
   var cl=allDayKeys().filter(function(x){return DB.days[x].closed;}).length;
@@ -1040,7 +1084,7 @@ function mergeDay(da,db2){
   var inPool={}; pool2.forEach(function(p){inPool[p.id]=1;});
   var t3=(aBase.top3||[]).filter(function(id){return inPool[id];});
   if(!t3.length) t3=(aOther.top3||[]).filter(function(id){return inPool[id];});
-  out.top3=t3.slice(0,3);
+  out.top3=t3.slice(0,topMax());
   var dtR=mergeDone(base.doneTop,other.doneTop,base.doneTopOff,other.doneTopOff);
   var dt=dtR.on; for(k in dt) if(gone[k]) delete dt[k];
   out.doneTop=dt; out.doneTopOff=dtR.off;
@@ -1061,9 +1105,23 @@ function mergeDay(da,db2){
   out.closed=!!(base.closed||other.closed);
   out.harvested=!!(base.harvested||other.harvested);
   out.full=!!(base.full||other.full);
+  out.punch=mergePunch(base.punch,other.punch,base.u||0,other.u||0);
   out.u=Math.max(base.u||0,other.u||0);
   out.arr=Math.max(da.arr||0,db2.arr||0);
   return out;
+}
+/* une el fichaje de dos aparatos: todas las sesiones (sin duplicar), y el
+   cronometro abierto del lado mas reciente si no quedo ya cerrado */
+function mergePunch(pa,pb,ua,ub){
+  pa=pa||{}; pb=pb||{};
+  var seen={},sessions=[];
+  (pa.sessions||[]).concat(pb.sessions||[]).forEach(function(x){
+    if(!x||!x.s)return; var key=x.s+"-"+(x.e||0); if(seen[key])return; seen[key]=1; sessions.push(x);
+  });
+  sessions.sort(function(a,b){return (a.s||0)-(b.s||0);});
+  var open=(ub>ua?(pb.open||pa.open):(pa.open||pb.open))||0;
+  if(open){ for(var i=0;i<sessions.length;i++){ if(sessions[i].s===open&&sessions[i].e){ open=0; break; } } }
+  return {open:open,sessions:sessions};
 }
 function pickList(newer,older,k){
   var a=newer[k],b=older[k];
@@ -1228,13 +1286,11 @@ function textOf(id){
 function briefingText(){
   var d=day(),L=[];
   L.push("◆ "+shortDate()+" · Briefing"); L.push("");
-  L.push("Ventana: "+d.workStart+" → "+d.workEnd); L.push("");
-  L.push("Las 3:");
+  L.push(topMax()===3?"Las 3:":"Esenciales:");
   (d.top3||[]).forEach(function(id,i){L.push((i+1)+". "+textOf(id));});
   if(!(d.top3||[]).length)L.push("(sin elegir)");
   L.push(""); L.push("Diarias fijas:");
   (DB.dailies||[]).forEach(function(x){L.push("· "+x.text);});
-  L.push(""); L.push("Fuera de la ventana, cerrado.");
   return L.join("\n");
 }
 function copyText(t,okMsg){
@@ -1260,6 +1316,24 @@ function windowState(){
 function bandHtml(){
   var d=day(),st=windowState();
   return '<div id="band" class="band '+st.cls+'"><span class="band-time">'+esc(d.workStart)+' → '+esc(d.workEnd)+'</span><span class="band-label">'+esc(st.label)+'</span></div>';
+}
+function hhmm(ts){ var x=new Date(ts); return pad(x.getHours())+":"+pad(x.getMinutes()); }
+function punchBlock(){
+  var d=day(),p=punchOf(d),on=!!p.open;
+  var h='<div class="punch'+(on?' on':'')+'">'+
+    '<div class="punch-top"><span class="punch-k">'+(on?"Trabajando":"Trabajado hoy")+'</span>'+
+      '<span class="punch-time mono" id="punchtime">'+fmtDur(punchMs(d))+'</span></div>'+
+    '<button class="bigbtn '+(on?"pm":"am")+'" data-action="'+(on?"punch-stop":"punch-start")+'" style="margin-top:0">'+
+      (on?IC.moon(17)+" Parar":IC.bolt(17)+" Empezar a trabajar")+'</button>';
+  var sess=(p.sessions||[]);
+  if(sess.length||on){
+    h+='<div class="punch-sess">';
+    sess.slice(-4).forEach(function(s){ h+='<span class="ps">'+hhmm(s.s)+"–"+hhmm(s.e)+'</span>'; });
+    if(on) h+='<span class="ps live">desde '+hhmm(p.open)+'</span>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return section("Fichaje","",h);
 }
 
 /* ============ piezas comunes ============ */
@@ -1316,14 +1390,15 @@ function quoteHtml(){
 /* ============ HOY ============ */
 function renderAM(){
   var d=day(),h='';
-  h+='<p class="intro">Vacía la cabeza. Elige 3. Marca las que sean extra. Pon una hora de cierre real y respétala.</p>';
+  h+='<p class="intro">Vacía la cabeza. Elige lo esencial. Marca las que sean extra. Lo demás, suéltalo.</p>';
   h+=metasHoyBlock();
+  h+=punchBlock();
 
   var pending=(d.pool||[]).filter(function(p){return p.from;});
   var pool='';
   if(pending.length){
     pool+='<div class="carry"><span class="ci">'+IC.up(16)+'</span><span class="ct">Venías con <b>'+pending.length+'</b> de días anteriores. '+
-          'Quedaron sin terminar, y hoy vuelven a estar sobre la mesa: decide otra vez si entran en Las 3, pasan a extra o se van.</span></div>';
+          'Quedaron sin terminar, y hoy vuelven a estar sobre la mesa: decide otra vez si entran en lo esencial, pasan a extra o se van.</span></div>';
   }
   pool+='<div class="row"><input id="draft" class="inp" placeholder="Escribe y pulsa Enter" value="'+esc(draft)+'"/>'+
     '<button class="iconbtn" data-action="add-pool">'+IC.plus(18)+'</button></div>'+
@@ -1332,7 +1407,7 @@ function renderAM(){
   (d.pool||[]).forEach(function(p){
     var isTop=(d.top3||[]).indexOf(p.id)>=0, rank=(d.top3||[]).indexOf(p.id)+1;
     pool+='<div class="pool-item'+(isTop?' top':(p.extra?' xtra':''))+'">'+
-      '<button class="rank" data-action="toggle-top" data-id="'+p.id+'" title="Una de Las 3 de hoy">'+(isTop?String(rank):'<i class="rdot"></i>')+'</button>'+
+      '<button class="rank" data-action="toggle-top" data-id="'+p.id+'" title="Marcar como esencial">'+(isTop?String(rank):'<i class="rdot"></i>')+'</button>'+
       '<button class="xbtn" data-action="toggle-extra-plan" data-id="'+p.id+'" title="Marcar como tarea extra">+</button>'+
       '<button class="adot" data-action="cycle-area" data-id="'+p.id+'" title="Cambiar de área"><i style="background:'+areaColor(p.area)+'"></i></button>'+
       '<span class="pool-text">'+(p.from?'<span class="tagfrom">Ayer</span>':'')+esc(p.text)+'</span>'+
@@ -1340,18 +1415,18 @@ function renderAM(){
   });
   pool+='</div>'+
     '<div class="legend2">'+
-    '<span class="lg l3"><b>1</b>Una de Las 3'+(gameOn()?' · 10 puntos':'')+'</span>'+
+    '<span class="lg l3"><b>1</b>Esencial'+(gameOn()?' · 10 puntos':'')+'</span>'+
     '<span class="lg lx"><b>+</b>Tarea extra'+(gameOn()?' · 6 puntos':'')+'</span>'+
     '</div>';
   h+=section('Vaciado mental','',pool);
 
-  var slots='<div class="slots">';
-  for(var i=0;i<3;i++){
+  var slots='<div class="slots">',tm=topMax();
+  for(var i=0;i<tm;i++){
     var id=(d.top3||[])[i];
     slots+='<div class="slot'+(id?' filled':'')+'"><span class="slot-n">0'+(i+1)+'</span><span class="slot-t">'+(id?esc(textOf(id)):'—')+'</span></div>';
   }
   slots+='</div>';
-  h+=section('Las 3 de hoy','Si solo salen estas, el día ha valido. No hay una cuarta: lo demás va como extra.',slots);
+  h+=section(topLabel(),'Si solo salen estas, el día ha valido. Lo demás va como extra.',slots);
 
   var planned=(d.pool||[]).filter(function(p){return p.extra&&(d.top3||[]).indexOf(p.id)<0;});
   var pl='<div class="pool">';
@@ -1363,13 +1438,6 @@ function renderAM(){
   });
   pl+='</div>';
   h+=section('Extras de hoy',(gameOn()?'Suman puntos si salen, y no pasa nada si no salen.':'Son de propina: si salen, bien, y si no, tampoco pasa nada.')+' Se marcan por la tarde, en el cierre.',pl);
-
-  var times='<div class="times">'+
-    '<label class="tfield"><span>Empiezo</span><input type="time" id="tstart" value="'+esc(d.workStart)+'"/></label>'+
-    '<label class="tfield accent"><span>Cierro</span><input type="time" id="tend" value="'+esc(d.workEnd)+'"/></label>'+
-    '</div>'+bandHtml();
-  h+=sectionAcc('homeVent','Ventana de trabajo<span class="accsum">'+esc(d.workStart)+' → '+esc(d.workEnd)+'</span>',
-    'El cierre no se gana terminando. Se decide ahora.',times);
 
   var dl='<div class="dailies">';
   (DB.dailies||[]).forEach(function(x){
@@ -1394,16 +1462,17 @@ function renderPM(){
   if(!d.closed){
     h+='<p class="intro pm">Marca lo hecho. Apunta lo extra. Lo que sobra pasa a mañana. Luego se cierra y se acabó.</p>';
     h+=metasHoyBlock();
+    h+=punchBlock();
 
     var rows='';
-    if(!(d.top3||[]).length)rows+='<div class="empty">No elegiste Las 3 esta mañana.</div>';
+    if(!(d.top3||[]).length)rows+='<div class="empty">No elegiste nada esencial esta mañana.</div>';
     rows+='<div class="slots">';
     (d.top3||[]).forEach(function(id,i){
       var it=(d.pool||[]).filter(function(x){return x.id===id;})[0]||{};
       rows+=checkRow({action:"toggle-done-top",id:id,n:"0"+(i+1),text:textOf(id),area:it.area,done:!!(d.doneTop||{})[id],pts:P.top});
     });
     rows+='</div>';
-    h+=section('Las 3 de hoy','Sé honesto. Hecho o no hecho.',rows);
+    h+=section(topLabel(),'Sé honesto. Hecho o no hecho.',rows);
 
     var drows='<div class="slots">';
     (DB.dailies||[]).forEach(function(x){
@@ -1450,13 +1519,14 @@ function renderPM(){
     h+='<p>Lo que no esté marcado pasará solo a tu vaciado de mañana, con la etiqueta «Ayer». No lo cargues esta noche.</p>'+
        '<button class="bigbtn pm" data-action="close-day">'+IC.moon(17)+' Cerrar el día</button></div>';
   }else{
-    var u=dayUnits(d), lines=closingLines();
+    var u=dayUnits(d), lines=closingLines(), tn=(d.top3||[]).length||3, wms=punchMs(d);
     h+='<div class="closed'+(S.justClosed?' anim':'')+'"><div class="ring">'+IC.check(28)+'</div>'+
        '<h2>'+esc(userName()?("Cerrado, "+userName()+"."):"Trabajo cerrado.")+'</h2>'+
        '<p>Ahora estás donde estés — no en el móvil. Lo pendiente te espera mañana en el vaciado. Ve a estar presente.</p>'+
-       '<div class="cstars">'+starsRow(u.stars,3,16)+'</div>'+
+       '<div class="cstars">'+starsRow(u.stars,tn,16)+'</div>'+
        (gameOn()?'<p class="ctotal mono">+'+u.total+' puntos hoy</p>'
                 :'<p class="ctotal mono">'+u.total+' cosas hechas hoy</p>')+
+       (wms>60000?'<p class="ctotal mono">'+fmtDur(wms)+' fichados hoy</p>':'')+
        '<div class="clines">';
     lines.forEach(function(t,i){
       h+='<p class="cl" style="animation-delay:'+(0.55+i*0.32)+'s">'+IC.spark(13)+'<span>'+esc(t)+'</span></p>';
@@ -1526,13 +1596,13 @@ function renderHist(){
     var d=DB.days[k],p=dayUnits(d),open=(S.openDay===k);
     list+='<div class="dcard"><button class="dhead" data-action="open-day" data-id="'+k+'">'+
       '<span class="dday">'+esc(weekShort(k))+' · '+esc(shortDate(k))+'</span>'+
-      starsRow(p.stars,3,11)+
+      starsRow(p.stars,(d.top3||[]).length||3,11)+
       '<span class="dpts">'+p.total+'</span></button>';
     if(open){
       list+='<div class="dbody">';
       var pmap={}; (d.pool||[]).forEach(function(x){pmap[x.id]=x;});
       if((d.top3||[]).length){
-        list+='<div class="hint" style="margin-bottom:7px">Las 3</div>';
+        list+='<div class="hint" style="margin-bottom:7px">Esenciales</div>';
         (d.top3||[]).forEach(function(id){
           var ok=!!(d.doneTop||{})[id], it=pmap[id]||{text:"—"};
           list+='<div class="dline '+(ok?'ok':'no')+'"><span class="dm">'+(ok?'✓':'·')+'</span>'+
@@ -1557,6 +1627,8 @@ function renderHist(){
             '<span class="dt">'+esc(x.text)+'</span></div>';
         });
       }
+      var wms=punchMs(d);
+      if(wms>60000) list+='<div class="hint" style="margin:10px 0 7px">Fichaje · '+fmtDur(wms)+' trabajados</div>';
       list+='<div class="readout"><span class="rv">'+p.base+' esenciales · '+p.extra+' extra</span>'+
             '<span class="rv">'+(d.closed?'Día cerrado':'Sin cerrar')+'</span></div>';
       list+='</div>';
@@ -1702,13 +1774,14 @@ function renderAjustes(){
   ar+='</div>';
   h+=sectionAcc('areas','Áreas','Cuatro. Cambia los nombres, no hace falta más.',ar);
 
-  /* ventana por defecto */
-  var d=day();
-  var tm='<div class="times">'+
-    '<label class="tfield"><span>Empiezo</span><input type="time" id="tstart" value="'+esc(d.workStart)+'"/></label>'+
-    '<label class="tfield accent"><span>Cierro</span><input type="time" id="tend" value="'+esc(d.workEnd)+'"/></label>'+
-    '</div>';
-  h+=sectionAcc('vent','Ventana por defecto','Se aplica a hoy y a los días nuevos.',tm);
+  /* tope de tareas esenciales */
+  var tmx=topMax();
+  var es='<div class="chips">';
+  [3,4,5].forEach(function(n){
+    es+='<button class="chip'+(tmx===n?' on':'')+'" data-action="set-topmax" data-id="'+n+'"'+(tmx===n?' style="border-color:var(--amber)"':'')+'>'+n+'</button>';
+  });
+  es+='</div><div class="note">Cuántas tareas esenciales puedes fijar al día (las de la estrella). Subirlo no borra nada; si ya tienes fijadas y lo bajas, las de más se quedan hasta que las quites a mano.</div>';
+  h+=sectionAcc('esen','Tareas esenciales<span class="accsum">'+tmx+'</span>','',es);
 
   /* frase del día */
   var qon=!(DB.settings&&DB.settings.quote===false);
@@ -2154,7 +2227,7 @@ function toggleTop(id){
   var i=d.top3.indexOf(id);
   if(i>=0)d.top3.splice(i,1);
   else{
-    if(d.top3.length>=3){toast("Solo tres. Esa es la gracia.");return;}
+    if(d.top3.length>=topMax()){toast(topMax()===3?"Solo tres. Esa es la gracia.":("Máximo "+topMax()+" esenciales."));return;}
     d.top3.push(id);
     var p=poolById(d,id);
     if(p&&p.extra){ p.extra=false; dropExtraEntry(d,id); }
@@ -2398,6 +2471,9 @@ function onClick(e){
   else if(a==="toggle-top")toggleTop(id);
   else if(a==="toggle-extra-plan")toggleExtraPlan(id);
   else if(a==="toggle-done-extra")toggleDoneExtra(id);
+  else if(a==="punch-start")startPunch();
+  else if(a==="punch-stop")stopPunch();
+  else if(a==="set-topmax"){ DB.settings=DB.settings||{}; DB.settings.topMax=clamp(parseInt(id,10)||3,3,5); save(); render(); }
   else if(a==="toggle-quote"){
     DB.settings=DB.settings||{};
     DB.settings.quote=(DB.settings.quote===false);
@@ -2640,6 +2716,7 @@ function boot(){
       if(DB.settings.game===undefined)DB.settings.game=true;
       if(DB.settings.notebook===undefined)DB.settings.notebook=true;
       if(DB.settings.name===undefined)DB.settings.name="";
+      if(DB.settings.topMax===undefined)DB.settings.topMax=3;
       if(DB.worldBonus===undefined)DB.worldBonus=0;
       if(DB.seenWorld===undefined)DB.seenWorld=worldOf(levelInfo(totals().total).lvl);
       DB.sync=DB.sync||{gistId:"",lastSync:0};
@@ -2674,11 +2751,12 @@ function boot(){
   });
 }
 
-/* reloj vivo: solo repinta la banda */
+/* reloj vivo del fichaje: actualiza el cronómetro mientras trabajas */
 setInterval(function(){
-  var b=document.getElementById("band");
-  if(b&&S.tab==="hoy"&&S.mode==="am")b.outerHTML=bandHtml();
-},20000);
+  if(S.tab!=="hoy")return;
+  var el=document.getElementById("punchtime");
+  if(el&&punchActive(day())) el.textContent=fmtDur(punchMs(day()));
+},1000);
 
 /* cambio de día con el archivo abierto */
 var bootDay=todayKey();
