@@ -235,6 +235,7 @@
   .dday{font-size:13.5px;color:var(--text);flex:1;min-width:0}
   .dstars{font-size:11px;color:var(--amber);letter-spacing:1px;flex-shrink:0}
   .dpts{font-family:var(--mono);font-size:12.5px;color:var(--text);flex-shrink:0}
+  .dwork{font-size:11px;color:var(--teal);flex-shrink:0}
   .dbody{padding:0 12px 12px;border-top:1px solid var(--border);padding-top:10px}
   .dline{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;color:var(--muted);margin-bottom:6px}
   .dline .dm{flex-shrink:0;font-family:var(--mono);font-size:11px;width:14px}
@@ -1591,14 +1592,37 @@ function renderHoy(){
 }
 
 /* ============ HISTÓRICO ============ */
+/* ---- horas fichadas agregadas ---- */
+function weekStartKey(){ var d=new Date(); d.setHours(12,0,0,0); var wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); return keyOf(d); }
+function sumWorkedSince(fromKey){ var tot=0; allDayKeys().forEach(function(k){ if(k>=fromKey){ var dd=DB.days[k]; if(dd)tot+=punchMs(dd); } }); return tot; }
+function sumWorkedAll(){ var tot=0; allDayKeys().forEach(function(k){ tot+=punchMs(DB.days[k]); }); return tot; }
+/* metas en las que avanzaste un día concreto, con las acciones que apuntaste */
+function metasAdvancedOn(k){
+  var out=[];
+  (DB.metas||[]).forEach(function(m){
+    if((m.checks||{})[k]){
+      var acts=(m.log||[]).filter(function(x){return x.date===k;}).map(function(x){return x.text;});
+      out.push({title:m.title,color:areaColor(m.area),actions:acts});
+    }
+  });
+  return out;
+}
 function renderHist(){
   var h='<div class="hdr"><div><div class="kicker">Histórico</div><div class="htitle">Día a día</div></div></div>';
   var t=totals();
-  h+='<div class="cards" style="margin-bottom:24px">'+
+  var wToday=punchMs(day()),wWeek=sumWorkedSince(weekStartKey()),wAll=sumWorkedAll();
+  h+='<div class="cards" style="margin-bottom:'+(wAll>0?'8px':'24px')+'">'+
      '<div class="card"><div class="cv">'+t.days+'</div><div class="ck">días con registro</div></div>'+
      '<div class="card"><div class="cv">'+t.closed+'</div><div class="ck">cierres</div></div>'+
      '<div class="card"><div class="cv">'+t.stars+'</div><div class="ck">estrellas</div></div>'+
      '</div>';
+  if(wAll>0){
+    h+='<div class="cards" style="margin-bottom:24px">'+
+       '<div class="card"><div class="cv" style="font-size:18px;color:var(--teal)">'+fmtHm(wToday)+'</div><div class="ck">fichado hoy</div></div>'+
+       '<div class="card"><div class="cv" style="font-size:18px;color:var(--teal)">'+fmtHm(wWeek)+'</div><div class="ck">esta semana</div></div>'+
+       '<div class="card"><div class="cv" style="font-size:18px;color:var(--teal)">'+fmtHm(wAll)+'</div><div class="ck">total fichado</div></div>'+
+       '</div>';
+  }
 
   /* gráfico de barras apiladas, 14 días */
   var keys=lastNDays(14);
@@ -1638,8 +1662,10 @@ function renderHist(){
   if(!ks.length) list+='<div class="empty">Todavía no hay días guardados.</div>';
   ks.slice(0,60).forEach(function(k){
     var d=DB.days[k],p=dayUnits(d),open=(S.openDay===k);
+    var dwms=punchMs(d);
     list+='<div class="dcard"><button class="dhead" data-action="open-day" data-id="'+k+'">'+
       '<span class="dday">'+esc(weekShort(k))+' · '+esc(shortDate(k))+'</span>'+
+      (dwms>60000?'<span class="dwork mono">'+fmtHm(dwms)+'</span>':'')+
       starsRow(p.stars,(d.top3||[]).length||3,11)+
       '<span class="dpts">'+p.total+'</span></button>';
     if(open){
@@ -1669,6 +1695,14 @@ function renderHist(){
           list+='<div class="dline ok"><span class="dm">+</span>'+
             '<i class="cdot" style="background:'+areaColor(x.area)+';margin-top:5px"></i>'+
             '<span class="dt">'+esc(x.text)+'</span></div>';
+        });
+      }
+      var madv=metasAdvancedOn(k);
+      if(madv.length){
+        list+='<div class="hint" style="margin:10px 0 7px">Metas en las que avanzaste</div>';
+        madv.forEach(function(m){
+          list+='<div class="dline ok"><span class="dm" style="color:'+m.color+'">◆</span>'+
+            '<span class="dt"><b>'+esc(m.title)+'</b>'+(m.actions.length?' — '+esc(m.actions.join(' · ')):'')+'</span></div>';
         });
       }
       var wms=punchMs(d);
