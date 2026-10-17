@@ -140,6 +140,11 @@
   .bigbtn.pm{background:var(--teal);color:var(--bg)}
   .bigbtn.ghost{background:var(--surface);border:1px solid var(--border);color:var(--text);font-weight:600}
   .bigbtn[disabled]{opacity:.45}
+  .recbtn{width:100%}
+  .bigbtn.rec{background:var(--clay);color:var(--bg);animation:recpulse 1.35s ease-in-out infinite}
+  @keyframes recpulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .recbtn.proc svg{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
   .checkrow{display:flex;align-items:center;gap:11px;width:100%;text-align:left;cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px}
   .checkrow.done{background:var(--teal-soft);border-color:var(--teal)}
@@ -471,7 +476,10 @@ var IC={
   spark:function(s){return svg('<path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.6 5.6 2.8 2.8"/><path d="m15.6 15.6 2.8 2.8"/><path d="m18.4 5.6-2.8 2.8"/><path d="m8.4 15.6-2.8 2.8"/>',s);},
   gift:function(s){return svg('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',s);},
   flag:function(s){return svg('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>',s);},
-  note:function(s){return svg('<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',s);}
+  note:function(s){return svg('<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',s);},
+  mic:function(s){return svg('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/>',s);},
+  stop:function(s){return svg('<rect x="6" y="6" width="12" height="12" rx="2"/>',s);},
+  spin:function(s){return svg('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',s);}
 };
 
 /* ============ almacenamiento por capas ============ */
@@ -555,6 +563,63 @@ function disablePush(){
   sRawSet(KPUSH,""); render(); toast("Notificaciones desactivadas");
 }
 function sendTestPush(){ fetch(PUSH_URL+"/test",{method:"POST"}).then(function(r){return r.json();}).then(function(j){ toast("Prueba enviada a "+((j&&j.ok)||0)+" dispositivo(s)"); }).catch(function(){ toast("No se pudo enviar la prueba."); }); }
+
+/* ============ vaciado mental por voz (audio -> Gemini -> tareas) ============ */
+var mediaRec=null, recChunks=[];
+function vacSupported(){ return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder); }
+function startVac(){
+  if(!vacSupported()){ toast("Tu navegador no permite grabar audio."); return; }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    recChunks=[];
+    var mr; try{ mr=new MediaRecorder(stream); }catch(e){ try{ mr=new MediaRecorder(stream,{mimeType:"audio/mp4"}); }catch(e2){ stream.getTracks().forEach(function(t){t.stop();}); toast("No se pudo iniciar la grabación."); return; } }
+    mediaRec=mr;
+    mr.ondataavailable=function(ev){ if(ev.data&&ev.data.size) recChunks.push(ev.data); };
+    mr.onstop=function(){
+      stream.getTracks().forEach(function(t){t.stop();});
+      var type=(recChunks[0]&&recChunks[0].type)||mr.mimeType||"audio/mp4";
+      sendVac(new Blob(recChunks,{type:type}));
+    };
+    mr.start(); S.rec="rec"; render();
+  }).catch(function(){ toast("Permiso de micrófono denegado."); });
+}
+function stopVac(){ if(mediaRec&&mediaRec.state!=="inactive"){ S.rec="proc"; render(); try{ mediaRec.stop(); }catch(e){ S.rec="idle"; render(); } } }
+function sendVac(blob){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var b64=String(fr.result).split(",")[1]||"";
+    var mime=(blob.type||"audio/mp4").split(";")[0];
+    fetch(PUSH_URL+"/vaciado",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({audio:b64,mime:mime,topMax:topMax(),areas:(DB.areas||[]).map(function(a){return {id:a.id,name:a.name};})})})
+    .then(function(r){return r.json();}).then(function(j){
+      S.rec="idle";
+      if(j&&Array.isArray(j.tasks)&&j.tasks.length){ ingestVac(j.tasks); }
+      else { render(); toast(j&&j.error?"No se pudo procesar (reinténtalo).":"No saqué tareas de ese audio."); }
+    }).catch(function(){ S.rec="idle"; render(); toast("No se pudo procesar el audio."); });
+  };
+  fr.onerror=function(){ S.rec="idle"; render(); toast("No se pudo leer la grabación."); };
+  fr.readAsDataURL(blob);
+}
+function ingestVac(tasks){
+  var d=day(); d.pool=d.pool||[]; d.top3=d.top3||[];
+  var added=0, ess=0, ids=(DB.areas||[]).map(function(a){return a.id;});
+  tasks.forEach(function(t){
+    if(!t||!t.text)return;
+    var ar=(ids.indexOf(t.area)>=0)?t.area:(ids[0]||"neg");
+    var id=uid(), item={id:id,text:String(t.text).slice(0,160),area:ar};
+    if(t.kind==="extra") item.extra=true;
+    d.pool.push(item); added++;
+    if(t.kind==="essential"&&d.top3.length<topMax()){ d.top3.push(id); ess++; }
+  });
+  d.arr=now(); touchDay(); save(); render();
+  toast(added?("Añadí "+added+" tarea"+(added===1?"":"s")+(ess?" · "+ess+" esencial"+(ess===1?"":"es"):"")):"Nada que añadir");
+}
+function vacRecBtn(){
+  if(!vacSupported())return '';
+  var st=S.rec||"idle";
+  if(st==="rec") return '<button class="bigbtn rec recbtn" data-action="vac-rec" style="margin-bottom:11px">'+IC.stop(16)+' Parar y procesar</button>';
+  if(st==="proc") return '<button class="bigbtn ghost recbtn proc" disabled style="margin-bottom:11px">'+IC.spin(16)+' Procesando tu voz…</button>';
+  return '<button class="bigbtn am recbtn" data-action="vac-rec" style="margin-bottom:11px">'+IC.mic(17)+' Soltar por voz</button>';
+}
 var GEN={id:"_",name:"Cierre y otros",color:"#A69B8B"};
 
 /* paleta categórica validada para fondo #24201B (validate_palette.js: PASS en las 6 comprobaciones) */
@@ -1524,7 +1589,7 @@ function renderAM(){
   h+=workBlock();
 
   var pending=(d.pool||[]).filter(function(p){return p.from;});
-  var pool='';
+  var pool=vacRecBtn();
   if(pending.length){
     pool+='<div class="carry"><span class="ci">'+IC.up(16)+'</span><span class="ct">Venías con <b>'+pending.length+'</b> de días anteriores. '+
           'Quedaron sin terminar, y hoy vuelven a estar sobre la mesa: decide otra vez si entran en lo esencial, pasan a extra o se van.</span></div>';
@@ -2665,6 +2730,7 @@ function onClick(e){
   else if(a==="punch-stop")stopPunch();
   else if(a==="add-block")addBlock();
   else if(a==="rm-block")removeBlock(id);
+  else if(a==="vac-rec"){ if((S.rec||"idle")==="rec")stopVac(); else if((S.rec||"idle")!=="proc")startVac(); }
   else if(a==="toggle-push"){ if(pushFlag())disablePush(); else enablePush(); }
   else if(a==="push-test")sendTestPush();
   else if(a==="set-topmax"){ DB.settings=DB.settings||{}; DB.settings.topMax=clamp(parseInt(id,10)||3,3,5); save(); render(); }
