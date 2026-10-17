@@ -41,25 +41,31 @@
 
   /* ---- frase del día ---- */
   .quote{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);
-         border-radius:10px;padding:13px 15px;margin-bottom:18px}
-  .quote .qt{font-size:14.5px;line-height:1.55;color:var(--text);font-weight:500}
-  .quote .qk{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+         border-radius:11px;padding:15px 16px;margin-bottom:26px}
+  .quote .qt{font-size:14.5px;line-height:1.6;color:var(--text);font-weight:500}
+  .quote .qk{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
 
-  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;gap:12px}
   .kicker{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--faint)}
-  .hdate{font-size:15px;color:var(--muted)}
+  .hdr .kicker{margin-bottom:6px}
+  .hdate{font-size:15.5px;color:var(--muted);line-height:1.35}
   .htitle{font-size:19px;font-weight:600;color:var(--text)}
+  /* cabecera compacta: saludo en una línea, y debajo fecha + toggle */
+  .hdr2{margin-bottom:26px}
+  .hdr2 .greet{margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1.5px}
+  .hdr-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .hdr-row .hdate{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
   .modes{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--border);flex-shrink:0}
-  .modebtn{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;border:none;cursor:pointer;font-size:12.5px;font-weight:600;background:transparent;color:var(--muted)}
+  .modebtn{display:flex;align-items:center;gap:5px;padding:7px 10px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted)}
   .modebtn.on-am{background:var(--amber);color:var(--bg)}
   .modebtn.on-pm{background:var(--teal);color:var(--bg)}
 
-  .intro{font-size:14.5px;line-height:1.55;color:var(--muted);margin:0 0 24px;padding-left:12px;border-left:2px solid var(--amber)}
+  .intro{font-size:14.5px;line-height:1.62;color:var(--muted);margin:4px 0 32px;padding-left:13px;border-left:2px solid var(--amber)}
   .intro.pm{border-left-color:var(--teal)}
   .intro.calm{border-left-color:var(--faint);font-size:13.5px}
 
-  .section{margin-bottom:28px}
-  .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px}
+  .section{margin-bottom:34px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px}
   /* cuando el título no lleva texto de ayuda debajo, un poco de aire antes del bloque */
   .sec-head + .row,.sec-head + .pool,.sec-head + .goal{margin-top:12px}
   .sec-label{font-size:13px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text)}
@@ -317,6 +323,8 @@
   /* ---- entrada del dia ---- */
   .intro-s{position:fixed;inset:0;z-index:120;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top) + 34px) 22px 34px;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .intro-in{width:100%;max-width:360px;margin:auto 0}
+  .intro-in.splash{cursor:pointer}
+  .splash-tap{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ghost);margin-top:28px}
   .i-r{width:52px;height:52px;border-radius:15px;border:2px solid var(--amber);display:grid;place-items:center;color:var(--amber);margin-bottom:20px}
   .intro-in .ik{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
   .intro-in h1{font-size:28px;line-height:1.22;font-weight:600;color:var(--text);margin:0 0 18px;letter-spacing:-.3px}
@@ -416,6 +424,15 @@
   .punch-elapsed{font-size:13.5px;color:var(--muted);margin-top:5px}
   .punch-sess{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
   .punch-sess .ps{font-family:var(--mono);font-size:11px;color:var(--faint);background:var(--surface2);border-radius:6px;padding:3px 7px}
+  .punch-sess .ps.blk{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+  .punch-sess .ps.blk.live{color:var(--amber);background:var(--amber-soft)}
+  .punch-sess .ps.blk.done{opacity:.6}
+  .blkx{background:transparent;border:none;color:var(--faint);cursor:pointer;display:inline-grid;place-items:center;padding:0;margin-left:1px}
+  .blkadd{display:flex;gap:8px;align-items:flex-end;margin-top:13px}
+  .blkadd .tfield{flex:1;min-width:0}
+  .blkadd .tfield input{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 8px;width:100%;text-align:center;-webkit-appearance:none;appearance:none}
+  .xtrarow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;padding-top:12px;border-top:1px solid var(--border)}
+  .xtra-k{font-size:12.5px;color:var(--muted);min-width:0}
 
   @media (max-width:380px){ .tfield input{font-size:16px;padding:9px 4px} .hbar-n{width:78px} .pool-item{gap:6px} .yn{padding:8px 11px} .tab span{font-size:9.5px} }
 </style>
@@ -514,7 +531,7 @@ function pushSupported(){ return ('serviceWorker' in navigator)&&('PushManager' 
 function isStandalone(){ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }
 function b64ToU8(s){ s=String(s).replace(/-/g,'+').replace(/_/g,'/'); var pad='='.repeat((4-s.length%4)%4); var raw=atob(s+pad),u=new Uint8Array(raw.length); for(var i=0;i<raw.length;i++)u[i]=raw.charCodeAt(i); return u; }
 function pendingEssentials(){ var d=day(),t=(d.top3||[]),done=0; t.forEach(function(id){ if((d.doneTop||{})[id])done++; }); return Math.max(0,t.length-done); }
-function stateSnapshot(){ var d=day(); return {date:todayKey(),pending:pendingEssentials(),closed:!!d.closed}; }
+function stateSnapshot(){ var d=day(); return {date:todayKey(),pending:pendingEssentials(),closed:!!d.closed,blocks:(d.blocks||[]).map(function(b){return {s:b.s,e:b.e};})}; }
 function reportState(){ if(!pushFlag())return; try{ fetch(PUSH_URL+"/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:stateSnapshot()})}).catch(function(){}); }catch(e){} }
 var stateTimer=null;
 function scheduleState(){ if(!pushFlag())return; if(stateTimer)clearTimeout(stateTimer); stateTimer=setTimeout(function(){ stateTimer=null; reportState(); },4000); }
@@ -590,7 +607,7 @@ var DB=emptyDB();
 function newDay(k){
   var s=DB.settings||{};
   return {date:k,pool:[],top3:[],workStart:s.workStart||"09:30",workEnd:s.workEnd||"19:00",
-          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0,punch:{open:0,sessions:[]}};
+          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0,punch:{open:0,sessions:[]},blocks:[]};
 }
 function day(k){
   k=k||todayKey();
@@ -655,6 +672,52 @@ function stopPunch(){
   var s=p.open, e=now();
   if(e>s) (p.sessions=p.sessions||[]).push({s:s,e:e});
   p.open=0; touchDay(); save(); render();
+}
+
+/* ============ bloque de trabajo (de X a Y) ============ */
+function hmToMin(s){ var p=String(s||"").split(":"); return (+p[0]||0)*60+(+p[1]||0); }
+function nowMin(){ var n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function blocksOf(d){ d=d||day(); if(!d.blocks)d.blocks=[]; return d.blocks; }
+function blockIsActive(b){ var m=nowMin(); return m>=hmToMin(b.s)&&m<hmToMin(b.e); }
+function blockIsPast(b){ return nowMin()>=hmToMin(b.e); }
+/* estado del bloque ahora mismo: activo / antes del próximo / terminado / ninguno */
+function blockNow(d){
+  var bs=blocksOf(d).slice().sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);}), m=nowMin(), act=null, next=null;
+  bs.forEach(function(b){
+    if(m>=hmToMin(b.s)&&m<hmToMin(b.e)){ if(!act)act=b; }
+    else if(hmToMin(b.s)>m){ if(!next||hmToMin(b.s)<hmToMin(next.s))next=b; }
+  });
+  if(act) return {state:"active",end:act.e,remainMin:hmToMin(act.end||act.e)-m,remain:hmToMin(act.e)-m};
+  if(next) return {state:"before",next:next.s,untilMin:hmToMin(next.s)-m};
+  return {state:bs.length?"after":"none"};
+}
+/* tiempo trabajado de un día: lo transcurrido de los bloques + el tiempo extra del cronómetro */
+function blocksWorkedMs(k){
+  var d=DB.days[k]; if(!d)return 0;
+  var isToday=(k===todayKey()), m=nowMin(), ms=0;
+  (d.blocks||[]).forEach(function(b){
+    var s=hmToMin(b.s), e=hmToMin(b.e); if(e<=s)return;
+    var end=isToday?Math.min(e,m):e;
+    if(end>s) ms+=(end-s)*60000;
+  });
+  return ms;
+}
+function workedMsForDay(k){ var d=DB.days[k]; return blocksWorkedMs(k)+(d?punchMs(d):0); }
+function addBlock(){
+  var s=String(blkDraftS||"").trim(), e=String(blkDraftE||"").trim();
+  if(!s){var el=document.getElementById("blkS"); if(el)s=el.value;}
+  if(!e){var el2=document.getElementById("blkE"); if(el2)e=el2.value;}
+  s=String(s||"").trim(); e=String(e||"").trim();
+  if(!s||!e){toast("Pon hora de inicio y de fin.");return;}
+  if(hmToMin(e)<=hmToMin(s)){toast("La hora de fin debe ser mayor que la de inicio.");return;}
+  var d=day(); d.blocks=d.blocks||[]; d.blocks.push({s:s,e:e});
+  d.blocks.sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);});
+  blkDraftS=""; blkDraftE=""; touchDay(); save(); render();
+}
+function removeBlock(i){ var d=day(); i=parseInt(i,10); if(d.blocks&&d.blocks[i]){ d.blocks.splice(i,1); touchDay(); save(); render(); } }
+function mergeBlocksPick(aBase,aOther){
+  var a=(aBase&&aBase.blocks), b=(aOther&&aOther.blocks);
+  return (a&&a.length)?a:(b||a||[]);
 }
 
 /* ============ ¿salió todo lo que había marcado? ============ */
@@ -1146,6 +1209,7 @@ function mergeDay(da,db2){
   out.harvested=!!(base.harvested||other.harvested);
   out.full=!!(base.full||other.full);
   out.punch=mergePunch(base.punch,other.punch,base.u||0,other.u||0);
+  out.blocks=mergeBlocksPick(aBase,aOther);
   out.u=Math.max(base.u||0,other.u||0);
   out.arr=Math.max(da.arr||0,db2.arr||0);
   return out;
@@ -1303,6 +1367,7 @@ var S={tab:"hoy",mode:"am",ready:false,editDailies:false,editAreas:false,copied:
        addMeta:false,metaArea:"neg",metaEdit:null,metaConfirmDel:null};
 var draft="",dailyDraft="",extraDraft="",rwName="",rwCost="";
 var metaTitle="",metaTarget="",metaCurrent="",metaUnit="",metaDeadline="",metaNote="",metaCur="";
+var blkDraftS="",blkDraftE="";
 var toastMsg="",toastT=null;
 
 function toast(m){
@@ -1358,27 +1423,47 @@ function bandHtml(){
   return '<div id="band" class="band '+st.cls+'"><span class="band-time">'+esc(d.workStart)+' → '+esc(d.workEnd)+'</span><span class="band-label">'+esc(st.label)+'</span></div>';
 }
 function hhmm(ts){ var x=new Date(ts); return pad(x.getHours())+":"+pad(x.getMinutes()); }
-function punchBlock(){
-  var d=day(),p=punchOf(d),on=!!p.open,tot=punchMs(d);
-  var h='<div class="punch'+(on?' on':'')+'">';
-  if(on){
-    h+='<div class="punch-k">Trabajando desde</div>'+
-       '<div class="punch-time mono">'+hhmm(p.open)+'</div>'+
-       '<div class="punch-elapsed mono" id="punchelapsed">Llevas '+fmtHm(tot)+'</div>'+
-       '<button class="bigbtn pm" data-action="punch-stop" style="margin-top:13px">'+IC.moon(17)+' Parar</button>';
+function workBlock(){
+  var d=day(),bs=blocksOf(d),st=blockNow(d),p=punchOf(d),onX=!!p.open;
+  var active=(st.state==="active");
+  var h='<div class="punch'+(active?" on":"")+'">';
+  if(active){
+    h+='<div class="punch-k">Trabajando · hasta las</div>'+
+       '<div class="punch-time mono">'+esc(st.end)+'</div>'+
+       '<div class="punch-elapsed mono" id="blockline">Quedan '+fmtHm(st.remain*60000)+'</div>';
+  }else if(st.state==="before"){
+    h+='<div class="punch-k">Próximo bloque a las</div>'+
+       '<div class="punch-time mono">'+esc(st.next)+'</div>'+
+       '<div class="punch-elapsed mono" id="blockline">Empieza en '+fmtHm(st.untilMin*60000)+'</div>';
   }else{
+    var w=workedMsForDay(todayKey());
     h+='<div class="punch-k">Trabajado hoy</div>'+
-       '<div class="punch-time mono">'+(tot>0?fmtHm(tot):"—")+'</div>'+
-       '<button class="bigbtn am" data-action="punch-start" style="margin-top:13px">'+IC.bolt(17)+' Empezar a trabajar</button>';
+       '<div class="punch-time mono">'+(w>0?fmtHm(w):"—")+'</div>';
   }
-  var sess=(p.sessions||[]);
-  if(sess.length){
+  /* bloques del día */
+  if(bs.length){
     h+='<div class="punch-sess">';
-    sess.slice(-5).forEach(function(s){ h+='<span class="ps">'+hhmm(s.s)+"–"+hhmm(s.e)+'</span>'; });
+    bs.forEach(function(b,i){
+      var cls=blockIsActive(b)?" live":(blockIsPast(b)?" done":"");
+      h+='<span class="ps blk'+cls+'">'+esc(b.s)+"–"+esc(b.e)+
+         '<button class="blkx" data-action="rm-block" data-id="'+i+'" title="Quitar bloque">'+IC.x(12)+'</button></span>';
+    });
     h+='</div>';
   }
+  /* añadir bloque */
+  var dflS=bs.length?bs[bs.length-1].e:(DB.settings.workStart||"09:30");
+  var dflE=DB.settings.workEnd||"14:00";
+  h+='<div class="blkadd">'+
+     '<label class="tfield"><span>De</span><input type="time" id="blkS" value="'+esc(blkDraftS||dflS)+'"/></label>'+
+     '<label class="tfield"><span>A</span><input type="time" id="blkE" value="'+esc(blkDraftE||dflE)+'"/></label>'+
+     '<button class="iconbtn" data-action="add-block" title="Añadir bloque">'+IC.plus(18)+'</button></div>';
+  /* tiempo extra (cronómetro), recogido */
+  var ex=punchMs(d);
+  h+='<div class="xtrarow"><span class="xtra-k">Tiempo extra'+
+     (onX?' · en marcha desde '+hhmm(p.open):(ex>0?' · '+fmtHm(ex):''))+'</span>'+
+     '<button class="minibtn'+(onX?' teal':'')+'" data-action="'+(onX?"punch-stop":"punch-start")+'">'+(onX?"Parar":"Empezar")+'</button></div>';
   h+='</div>';
-  return section("Fichaje","",h);
+  return section("Trabajo","",h);
 }
 
 /* ============ piezas comunes ============ */
@@ -1436,8 +1521,7 @@ function quoteHtml(){
 function renderAM(){
   var d=day(),h='';
   h+='<p class="intro">Vacía la cabeza. Elige lo esencial. Marca las que sean extra. Lo demás, suéltalo.</p>';
-  h+=metasHoyBlock();
-  h+=punchBlock();
+  h+=workBlock();
 
   var pending=(d.pool||[]).filter(function(p){return p.from;});
   var pool='';
@@ -1473,6 +1557,8 @@ function renderAM(){
   slots+='</div>';
   h+=section(topLabel(),'Si solo salen estas, el día ha valido. Lo demás va como extra.',slots);
 
+  h+=metasHoyBlock();
+
   var planned=(d.pool||[]).filter(function(p){return p.extra&&(d.top3||[]).indexOf(p.id)<0;});
   var pl='<div class="pool">';
   if(!planned.length) pl+='<div class="empty">Ninguna marcada. Pulsa el «+» de cualquier tarea del vaciado.</div>';
@@ -1482,7 +1568,7 @@ function renderAM(){
       (gameOn()?'<span class="cpts">+'+P.extra+'</span>':'')+'</div>';
   });
   pl+='</div>';
-  h+=section('Extras de hoy',(gameOn()?'Suman puntos si salen, y no pasa nada si no salen.':'Son de propina: si salen, bien, y si no, tampoco pasa nada.')+' Se marcan por la tarde, en el cierre.',pl);
+  h+=sectionAcc('homeExtras','Extras de hoy'+(planned.length?'<span class="accsum">'+planned.length+'</span>':''),'Se marcan por la tarde, en el cierre.',pl);
 
   var dl='<div class="dailies">';
   (DB.dailies||[]).forEach(function(x){
@@ -1497,7 +1583,7 @@ function renderAM(){
   if(notebookOn()){
     var lib='<pre class="brief-pre selectable">'+esc(briefingText())+'</pre>'+
       '<button class="bigbtn am" data-action="copy">'+IC.copy(17)+' Copiar para la libreta</button>';
-    h+=section('Para la libreta','Copia esto limpio en tu cuaderno. Ese es el filtro.',lib);
+    h+=sectionAcc('homeLib','Para la libreta','Copia esto limpio en tu cuaderno. Ese es el filtro.',lib);
   }
   return h;
 }
@@ -1506,8 +1592,8 @@ function renderPM(){
   var d=day(),h='',p=dayPoints(d);
   if(!d.closed){
     h+='<p class="intro pm">Marca lo hecho. Apunta lo extra. Lo que sobra pasa a mañana. Luego se cierra y se acabó.</p>';
+    h+=workBlock();
     h+=metasHoyBlock();
-    h+=punchBlock();
 
     var rows='';
     if(!(d.top3||[]).length)rows+='<div class="empty">No elegiste nada esencial esta mañana.</div>';
@@ -1564,7 +1650,7 @@ function renderPM(){
     h+='<p>Lo que no esté marcado pasará solo a tu vaciado de mañana, con la etiqueta «Ayer». No lo cargues esta noche.</p>'+
        '<button class="bigbtn pm" data-action="close-day">'+IC.moon(17)+' Cerrar el día</button></div>';
   }else{
-    var u=dayUnits(d), lines=closingLines(), tn=(d.top3||[]).length||3, wms=punchMs(d);
+    var u=dayUnits(d), lines=closingLines(), tn=(d.top3||[]).length||3, wms=workedMsForDay(todayKey());
     h+='<div class="closed'+(S.justClosed?' anim':'')+'"><div class="ring">'+IC.check(28)+'</div>'+
        '<h2>'+esc(userName()?("Cerrado, "+userName()+"."):"Trabajo cerrado.")+'</h2>'+
        '<p>Ahora estás donde estés — no en el móvil. Lo pendiente te espera mañana en el vaciado. Ve a estar presente.</p>'+
@@ -1583,19 +1669,21 @@ function renderPM(){
 
 function renderHoy(){
   return quoteHtml()+
-     '<div class="hdr"><div><div class="kicker">'+esc(greeting())+'</div><div class="hdate">'+esc(prettyDate())+'</div></div>'+
-     '<div class="modes">'+
-     '<button class="modebtn'+(S.mode==="am"?' on-am':'')+'" data-action="mode-am">'+IC.sun(15)+' Mañana</button>'+
-     '<button class="modebtn'+(S.mode==="pm"?' on-pm':'')+'" data-action="mode-pm">'+IC.moon(15)+' Cierre</button>'+
-     '</div></div>'+
+     '<div class="hdr2"><div class="hdr-row">'+
+         '<div class="hdate">'+esc(prettyDate())+'</div>'+
+         '<div class="modes">'+
+           '<button class="modebtn'+(S.mode==="am"?' on-am':'')+'" data-action="mode-am">'+IC.sun(15)+' Mañana</button>'+
+           '<button class="modebtn'+(S.mode==="pm"?' on-pm':'')+'" data-action="mode-pm">'+IC.moon(15)+' Cierre</button>'+
+         '</div>'+
+       '</div></div>'+
      ((S.mode==="am")?renderAM():renderPM());
 }
 
 /* ============ HISTÓRICO ============ */
 /* ---- horas fichadas agregadas ---- */
 function weekStartKey(){ var d=new Date(); d.setHours(12,0,0,0); var wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); return keyOf(d); }
-function sumWorkedSince(fromKey){ var tot=0; allDayKeys().forEach(function(k){ if(k>=fromKey){ var dd=DB.days[k]; if(dd)tot+=punchMs(dd); } }); return tot; }
-function sumWorkedAll(){ var tot=0; allDayKeys().forEach(function(k){ tot+=punchMs(DB.days[k]); }); return tot; }
+function sumWorkedSince(fromKey){ var tot=0; allDayKeys().forEach(function(k){ if(k>=fromKey){ if(DB.days[k])tot+=workedMsForDay(k); } }); return tot; }
+function sumWorkedAll(){ var tot=0; allDayKeys().forEach(function(k){ tot+=workedMsForDay(k); }); return tot; }
 /* metas en las que avanzaste un día concreto, con las acciones que apuntaste */
 function metasAdvancedOn(k){
   var out=[];
@@ -1610,7 +1698,7 @@ function metasAdvancedOn(k){
 function renderHist(){
   var h='<div class="hdr"><div><div class="kicker">Histórico</div><div class="htitle">Día a día</div></div></div>';
   var t=totals();
-  var wToday=punchMs(day()),wWeek=sumWorkedSince(weekStartKey()),wAll=sumWorkedAll();
+  var wToday=workedMsForDay(todayKey()),wWeek=sumWorkedSince(weekStartKey()),wAll=sumWorkedAll();
   h+='<div class="cards" style="margin-bottom:'+(wAll>0?'8px':'24px')+'">'+
      '<div class="card"><div class="cv">'+t.days+'</div><div class="ck">días con registro</div></div>'+
      '<div class="card"><div class="cv">'+t.closed+'</div><div class="ck">cierres</div></div>'+
@@ -1662,7 +1750,7 @@ function renderHist(){
   if(!ks.length) list+='<div class="empty">Todavía no hay días guardados.</div>';
   ks.slice(0,60).forEach(function(k){
     var d=DB.days[k],p=dayUnits(d),open=(S.openDay===k);
-    var dwms=punchMs(d);
+    var dwms=workedMsForDay(k);
     list+='<div class="dcard"><button class="dhead" data-action="open-day" data-id="'+k+'">'+
       '<span class="dday">'+esc(weekShort(k))+' · '+esc(shortDate(k))+'</span>'+
       (dwms>60000?'<span class="dwork mono">'+fmtHm(dwms)+'</span>':'')+
@@ -1705,7 +1793,7 @@ function renderHist(){
             '<span class="dt"><b>'+esc(m.title)+'</b>'+(m.actions.length?' — '+esc(m.actions.join(' · ')):'')+'</span></div>';
         });
       }
-      var wms=punchMs(d);
+      var wms=workedMsForDay(k);
       if(wms>60000) list+='<div class="hint" style="margin:10px 0 7px">Fichaje · '+fmtHm(wms)+' trabajados</div>';
       list+='<div class="readout"><span class="rv">'+p.base+' esenciales · '+p.extra+' extra</span>'+
             '<span class="rv">'+(d.closed?'Día cerrado':'Sin cerrar')+'</span></div>';
@@ -2177,7 +2265,10 @@ function metasHoyBlock(){
       '<button class="minibtn teal" data-action="go-metas" data-id="'+m.id+'">Detalle</button></div>'+
       '</div>';
   });
-  return section("Tus metas","",inner);
+  /* resumen para la cabecera del acordeón: nº de metas y si falta por marcar hoy hay un punto */
+  var pend=act.filter(function(m){return !(m.checks||{})[todayKey()];}).length;
+  var sum='<span class="accsum">'+act.length+(pend?' · '+pend+' sin marcar':'')+'</span>';
+  return sectionAcc("homeMetas","Tus metas"+sum,"",inner);
 }
 
 /* ============ render principal ============ */
@@ -2478,6 +2569,13 @@ function dayToRecover(){
 }
 function introHtml(){
   if(S.intro&&S.intro.stage==="rec")return recoverHtml(S.intro.k);
+  if(S.intro&&S.intro.stage==="splash")
+    return '<div class="intro-s" data-action="splash-go"><div class="intro-in splash">'+
+      '<div class="i-r fadeup d1">'+IC.target(26)+'</div>'+
+      '<h1 class="fadeup d2">'+esc(greeting())+'</h1>'+
+      '<div class="i-q fadeup d3">'+esc(quoteOfDay())+'</div>'+
+      '<div class="splash-tap fadeup d4">Toca para entrar</div>'+
+      '</div></div>';
   var k=S.intro?S.intro.k:null;
   return '<div class="intro-s"><div class="intro-in">'+
     '<div class="i-r fadeup d1">'+IC.target(26)+'</div>'+
@@ -2547,6 +2645,7 @@ function finishIntro(){
   save({nosync:true});
   render();
 }
+function dismissSplash(){ if(S.intro&&S.intro.stage==="splash"){ S.intro=null; render(); } }
 
 /* ============ eventos delegados ============ */
 function onClick(e){
@@ -2564,6 +2663,8 @@ function onClick(e){
   else if(a==="toggle-done-extra")toggleDoneExtra(id);
   else if(a==="punch-start")startPunch();
   else if(a==="punch-stop")stopPunch();
+  else if(a==="add-block")addBlock();
+  else if(a==="rm-block")removeBlock(id);
   else if(a==="toggle-push"){ if(pushFlag())disablePush(); else enablePush(); }
   else if(a==="push-test")sendTestPush();
   else if(a==="set-topmax"){ DB.settings=DB.settings||{}; DB.settings.topMax=clamp(parseInt(id,10)||3,3,5); save(); render(); }
@@ -2605,6 +2706,7 @@ function onClick(e){
   else if(a==="buy-cancel"){ S.confirmBuy=null; render(); }
   else if(a==="bought-ok"){ S.bought=null; render(); }
   else if(a==="world-ok"){ S.worldUp=null; render(); }
+  else if(a==="splash-go"){ dismissSplash(); }
   else if(a==="intro-go"){
     if(S.intro&&S.intro.k)S.intro={stage:"rec",k:S.intro.k};
     else finishIntro();
@@ -2718,6 +2820,8 @@ function onInput(e){
   else if(i==="metaDeadline")metaDeadline=t.value;
   else if(i==="metaNote")metaNote=t.value;
   else if(i==="metaCur")metaCur=t.value;
+  else if(i==="blkS")blkDraftS=t.value;
+  else if(i==="blkE")blkDraftE=t.value;
   else if(i==="tokinp"){ setToken(t.value.trim()); paintSyncDot(); }
   else if(i==="gidinp"){ DB.sync.gistId=t.value.trim(); sSet(KDB,DB); }
   else if(t.getAttribute&&t.getAttribute("data-mdl")){ setMetaDeadline(t.getAttribute("data-mdl"),t.value); }
@@ -2746,6 +2850,8 @@ function onChange(e){
   else if(i==="tend"){ d.workEnd=e.target.value||d.workEnd; DB.settings.workEnd=d.workEnd; touchDay(); save(); render(); }
   else if(i==="impfile"){ if(e.target.files&&e.target.files[0]) importJSON(e.target.files[0]); }
   else if(i==="metaDeadline"){ metaDeadline=e.target.value; }
+  else if(i==="blkS"){ blkDraftS=e.target.value; }
+  else if(i==="blkE"){ blkDraftE=e.target.value; }
   else if(e.target.getAttribute&&e.target.getAttribute("data-mdl")){ setMetaDeadline(e.target.getAttribute("data-mdl"),e.target.value); }
 }
 document.addEventListener("click",onClick);
@@ -2826,7 +2932,10 @@ function boot(){
     }
     day();
     var _rk=dayToRecover();
-    if(!introDone()&&!needsWelcome()) S.intro={stage:"hello",k:_rk};
+    if(!needsWelcome()){
+      if(!introDone()) S.intro={stage:"hello",k:_rk};          /* primer arranque del día: recibe + arrastra lo de ayer */
+      else { S.intro={stage:"splash"}; setTimeout(dismissSplash,1400); }  /* resto de arranques: bienvenida breve */
+    }
     if(!S.intro){ harvestCarry(); applyCarry(); }
     S.area=(DB.areas[0]||{}).id||"neg"; S.extraArea=S.area;
     S.welGame=!(DB.settings&&DB.settings.game===false);
@@ -2844,12 +2953,14 @@ function boot(){
   });
 }
 
-/* "Llevas Xh Ym" se refresca tranquilo cada minuto, sin segundos */
+/* refresca el bloque de trabajo cada 30s (cuenta atrás y cambio de estado),
+   sin pisar lo que estés escribiendo */
 setInterval(function(){
-  if(S.tab!=="hoy")return;
-  var el=document.getElementById("punchelapsed");
-  if(el&&punchActive(day())) el.textContent="Llevas "+fmtHm(punchMs(day()));
-},60000);
+  if(S.tab!=="hoy"||S.intro)return;
+  var ae=document.activeElement;
+  if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"))return;
+  if(document.getElementById("blockline")||document.querySelector(".punch")) render();
+},30000);
 
 /* cambio de día con el archivo abierto */
 var bootDay=todayKey();
