@@ -388,12 +388,12 @@
   @keyframes recwave{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
   @keyframes auraspin{to{transform:rotate(360deg)}}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
-  .voicebtn{position:relative;display:block;width:100%;border:none;background:var(--border);padding:1px;cursor:pointer;margin-bottom:12px;border-radius:16px;font-family:inherit;overflow:hidden}
-  .voicebtn .vb-aura{position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));opacity:0;animation:none}
-  .voicebtn .vb-face{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:15px;padding:15px;background:var(--surface);color:var(--text);font-size:15px;font-weight:700}
+  .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
+  .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
+  .voicebtn .vb-face{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:14px;padding:15px;background:var(--surface);color:var(--text);font-size:15px;font-weight:700}
   .voicebtn .vb-face svg{color:var(--amber)}
-  .voicebtn:active{box-shadow:0 0 18px rgba(227,154,59,.16)}
-  .voicebtn:active .vb-aura{opacity:.95;animation:auraspin 4.5s linear infinite}
+  .voicebtn:active{border-color:transparent;padding:2px}
+  .voicebtn:active .vb-aura{display:block;animation:auraspin 4.5s linear infinite}
   .voicebtn:active .vb-face{background:var(--surface2)}
   @media (prefers-reduced-motion:reduce){ .rec-aura,.vb-aura{animation:none} }
   @media (prefers-reduced-motion:reduce){ .fadeup{animation-duration:.01s;animation-delay:0s} .sl-ring,.rec-wave{animation:none;opacity:.25} }
