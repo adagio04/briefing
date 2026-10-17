@@ -373,20 +373,23 @@
   .splashscreen .splash-tap{margin-top:34px}
   /* ---- overlay de grabación por voz (pantalla propia, sin ver lo de detrás) ---- */
   .ovl.recovl{z-index:130;background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
-  .reccard{text-align:center;background:transparent;border:none;max-width:340px;padding:26px 24px}
-  .rec-orb{position:relative;width:132px;height:132px;margin:6px auto 26px;display:grid;place-items:center;border-radius:50%}
-  /* aura giratoria: un halo de luz que gira por los lados del orbe */
-  .rec-orb .rec-aura{position:absolute;inset:-12px;border-radius:50%;background:conic-gradient(from 0deg,var(--clay),var(--amber),rgba(227,154,59,0),var(--clay),var(--amber),rgba(227,154,59,0),var(--clay));filter:blur(11px);opacity:.85;animation:auraspin 3.6s linear infinite}
-  .rec-orb .rec-core{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#E3A978,var(--clay) 62%,#9e5f3e);box-shadow:inset 0 2px 10px rgba(255,255,255,.25),inset 0 -6px 14px rgba(0,0,0,.35);z-index:2}
+  .reccard{text-align:center;background:transparent;border:none;max-width:360px;padding:20px 24px}
+  /* orbe con portal de partículas girando alrededor (estilo interestelar) */
+  .rec-orb{position:relative;width:230px;height:230px;margin:2px auto 22px;display:grid;place-items:center;border-radius:50%}
+  .rec-orb .portalfx{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .rec-orb .rec-aura{position:absolute;inset:34%;border-radius:50%;background:radial-gradient(circle,rgba(227,154,59,.5),rgba(201,128,90,.12) 60%,rgba(227,154,59,0) 72%);filter:blur(7px);z-index:1;animation:auraglow 3.2s ease-in-out infinite}
+  .rec-orb .rec-core{position:absolute;inset:37%;border-radius:50%;background:radial-gradient(circle at 38% 32%,#E3A978,var(--clay) 62%,#9e5f3e);box-shadow:inset 0 2px 9px rgba(255,255,255,.28),inset 0 -6px 13px rgba(0,0,0,.35),0 0 22px rgba(227,154,59,.3);z-index:2}
   .rec-orb svg{position:relative;z-index:3;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
-  .rec-orb .rec-wave{position:absolute;inset:6px;border-radius:50%;border:2px solid var(--clay);opacity:0;z-index:1;animation:recwave 2s ease-out infinite}
-  .rec-orb .rec-wave:nth-child(2){animation-delay:.66s}
-  .rec-orb .rec-wave:nth-child(3){animation-delay:1.33s}
-  .rec-orb.proc .rec-aura{background:conic-gradient(from 0deg,var(--amber),rgba(227,154,59,0),var(--amber),rgba(227,154,59,0),var(--amber))}
-  .rec-orb.proc .rec-core{background:radial-gradient(circle at 38% 32%,#3a342c,var(--surface2) 70%)}
+  .rec-orb.proc .rec-aura{background:radial-gradient(circle,rgba(227,154,59,.35),rgba(227,154,59,0) 70%)}
+  .rec-orb.proc .rec-core{background:radial-gradient(circle at 38% 32%,#3a342c,var(--surface2) 70%);box-shadow:inset 0 2px 9px rgba(255,255,255,.1),0 0 18px rgba(227,154,59,.18)}
   .rec-orb.proc svg{color:var(--amber);animation:spin 1s linear infinite}
-  @keyframes recwave{0%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+  @keyframes auraglow{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
   @keyframes auraspin{to{transform:rotate(360deg)}}
+  /* portal de partículas (canvas) del splash y del orbe */
+  canvas.portalfx{display:block;width:100%;height:100%}
+  .rec-orb .portalfx{width:100%;height:100%}
+  .splashscreen .portalfx{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+  .splashscreen .intro-in{position:relative;z-index:1}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
   .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
@@ -2542,12 +2545,12 @@ function overlayHtml(){
   if(S.rec==="rec"||S.rec==="proc"){
     if(S.rec==="proc")
       return '<div class="ovl recovl"><div class="ovlcard reccard">'+
-        '<div class="rec-orb proc"><span class="rec-aura"></span><span class="rec-core"></span>'+IC.spin(34)+'</div>'+
+        '<div class="rec-orb proc"><canvas class="portalfx" data-portal="orb"></canvas><span class="rec-aura"></span><span class="rec-core"></span>'+IC.spin(30)+'</div>'+
         '<h3>Procesando tu voz…</h3>'+
         '<p>Estoy repartiendo lo que has dicho en áreas y tareas. Un momento.</p>'+
         '</div></div>';
     return '<div class="ovl recovl"><div class="ovlcard reccard">'+
-      '<div class="rec-orb"><span class="rec-aura"></span><span class="rec-wave"></span><span class="rec-wave"></span><span class="rec-wave"></span><span class="rec-core"></span>'+IC.mic(34)+'</div>'+
+      '<div class="rec-orb"><canvas class="portalfx" data-portal="orb"></canvas><span class="rec-aura"></span><span class="rec-core"></span>'+IC.mic(30)+'</div>'+
       '<h3>Te escucho</h3>'+
       '<p>Suelta todo lo que tengas en la cabeza. Cuando acabes, para y lo convierto en tareas.</p>'+
       '<button class="bigbtn rec" data-action="vac-rec" style="margin-top:20px">'+IC.stop(16)+' Parar y procesar</button>'+
@@ -2556,18 +2559,68 @@ function overlayHtml(){
   return '';
 }
 
+/* ============ portal de partículas (splash + orbe de voz) ============ */
+/* un disco de puntos que gira como una galaxia, en nuestra paleta */
+var _portalRAF=null,_portalCv=null;
+function stopPortal(){ if(_portalRAF){cancelAnimationFrame(_portalRAF);_portalRAF=null;} _portalCv=null; }
+function mountPortal(){
+  var cv=document.querySelector("canvas.portalfx");
+  if(!cv){ if(_portalCv)stopPortal(); return; }
+  if(cv===_portalCv)return;
+  stopPortal(); _portalCv=cv; runPortal(cv);
+}
+function runPortal(cv){
+  var ctx=cv.getContext&&cv.getContext("2d"); if(!ctx)return;
+  var dpr=Math.min(window.devicePixelRatio||1,2),reduce=false;
+  try{reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){}
+  function resize(){ var r=cv.getBoundingClientRect(); cv.width=Math.max(2,Math.round((r.width||cv.clientWidth||2)*dpr)); cv.height=Math.max(2,Math.round((r.height||cv.clientHeight||2)*dpr)); }
+  resize(); cv._resize=resize;
+  var big=(cv.getAttribute("data-portal")==="splash");
+  var N=big?170:120;
+  var COL=["rgba(173,164,150,","rgba(173,164,150,","rgba(173,164,150,","rgba(227,154,59,","rgba(201,128,90,","rgba(250,247,241,"];
+  var P=[],i;
+  for(i=0;i<N;i++){
+    var ring=Math.random()<0.78;
+    var rr=ring?(1+(Math.random()*2-1)*0.14):(0.1+Math.random()*0.95);
+    P.push({a:Math.random()*6.2832,r:rr,
+      w:(0.14+(1-Math.min(rr,1))*0.24)*(big?0.7:1.15),
+      s:(ring?0.55:0.5)+Math.random()*(ring?1.5:1.0),
+      col:COL[(Math.random()*COL.length)|0],
+      base:0.16+Math.random()*0.5,tw:Math.random()*6.2832,tws:0.5+Math.random()*1.7});
+  }
+  var t0=performance.now();
+  function draw(now){
+    var dt=(now-t0)/1000,w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    var cx=w/2,cy=h/2,R=Math.min(w,h)*(big?0.44:0.47),ys=0.8;
+    var g=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.15);
+    g.addColorStop(0,"rgba(227,154,59,0.05)"); g.addColorStop(0.65,"rgba(227,154,59,0.02)"); g.addColorStop(1,"rgba(227,154,59,0)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    for(var j=0;j<P.length;j++){ var p=P[j];
+      var ang=p.a+dt*p.w,rad=p.r*R;
+      var x=cx+Math.cos(ang)*rad,y=cy+Math.sin(ang)*rad*ys;
+      var al=p.base*(0.55+0.45*Math.sin(p.tw+dt*p.tws));
+      ctx.beginPath(); ctx.arc(x,y,p.s*dpr,0,6.2832);
+      ctx.fillStyle=p.col+al.toFixed(3)+")"; ctx.fill();
+    }
+    if(!reduce) _portalRAF=requestAnimationFrame(draw);
+  }
+  if(reduce) draw(t0); else _portalRAF=requestAnimationFrame(draw);
+}
+window.addEventListener("resize",function(){ if(_portalCv&&_portalCv._resize)_portalCv._resize(); });
+
 function render(){
   if(!S.ready)return;
   var app=document.getElementById("app"), tb=document.getElementById("tabs");
   if(S.intro&&!needsWelcome()){
     app.innerHTML=introHtml();
     tb.innerHTML=""; tb.className="tabs hidden";
-    restoreFocus(); return;
+    restoreFocus(); mountPortal(); return;
   }
   if(needsWelcome()){
     app.innerHTML=renderWelcome();
     tb.innerHTML=""; tb.className="tabs hidden";
-    restoreFocus(); return;
+    restoreFocus(); mountPortal(); return;
   }
   if(gameOn())checkWorld();
   if(S.tab==="prog"&&!gameOn())S.tab="hoy";
@@ -2581,6 +2634,7 @@ function render(){
   app.innerHTML=h+overlayHtml();
   renderTabs();
   restoreFocus();
+  mountPortal();
 }
 function needsWelcome(){
   return !(DB.settings&&(DB.settings.name||DB.settings.greeted));
@@ -2784,7 +2838,7 @@ function dayToRecover(){
 function introHtml(){
   if(S.intro&&S.intro.stage==="rec")return recoverHtml(S.intro.k);
   if(S.intro&&S.intro.stage==="splash")
-    return '<div class="intro-s splashscreen" data-action="splash-go"><div class="intro-in splash">'+
+    return '<div class="intro-s splashscreen" data-action="splash-go"><canvas class="portalfx" data-portal="splash"></canvas><div class="intro-in splash">'+
       '<div class="splash-logo"><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-core"></span></div>'+
       '<div class="splash-name fadeup d2">Briefing</div>'+
       '<h1 class="fadeup d3">'+esc(greeting())+'</h1>'+
@@ -3176,6 +3230,7 @@ function boot(){
    sin pisar lo que estés escribiendo */
 setInterval(function(){
   if(S.tab!=="hoy"||S.intro)return;
+  if(S.rec==="rec"||S.rec==="proc")return;
   var ae=document.activeElement;
   if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"))return;
   if(document.getElementById("blockline")||document.querySelector(".punch")) render();
