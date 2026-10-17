@@ -41,7 +41,7 @@
 
   /* ---- frase del día ---- */
   .quote{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--amber);
-         border-radius:11px;padding:15px 16px;margin-bottom:26px}
+         border-radius:11px;padding:13px 15px;margin-bottom:16px}
   .quote .qt{font-size:14.5px;line-height:1.6;color:var(--text);font-weight:500}
   .quote .qk{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
 
@@ -51,7 +51,7 @@
   .hdate{font-size:15.5px;color:var(--muted);line-height:1.35}
   .htitle{font-size:19px;font-weight:600;color:var(--text)}
   /* cabecera compacta: saludo en una línea, y debajo fecha + toggle */
-  .hdr2{margin-bottom:26px}
+  .hdr2{margin-bottom:16px}
   .hdr2 .greet{margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1.5px}
   .hdr-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .hdr-row .hdate{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -60,11 +60,11 @@
   .modebtn.on-am{background:var(--amber);color:var(--bg)}
   .modebtn.on-pm{background:var(--teal);color:var(--bg)}
 
-  .intro{font-size:14.5px;line-height:1.62;color:var(--muted);margin:4px 0 32px;padding-left:13px;border-left:2px solid var(--amber)}
+  .intro{font-size:14px;line-height:1.55;color:var(--muted);margin:2px 0 18px;padding-left:12px;border-left:2px solid var(--amber)}
   .intro.pm{border-left-color:var(--teal)}
   .intro.calm{border-left-color:var(--faint);font-size:13.5px}
 
-  .section{margin-bottom:34px}
+  .section{margin-bottom:24px}
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px}
   /* cuando el título no lleva texto de ayuda debajo, un poco de aire antes del bloque */
   .sec-head + .row,.sec-head + .pool,.sec-head + .goal{margin-top:12px}
@@ -348,7 +348,33 @@
   .rec-i.ex .rec-b{background:var(--teal);border-color:var(--teal)}
   .rec-t{flex:1;min-width:0;line-height:1.4}
   .rec-k{flex-shrink:0;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ghost)}
-  @media (prefers-reduced-motion:reduce){ .fadeup{animation-duration:.01s;animation-delay:0s} }
+  /* ---- splash de arranque (logo aros + toca para entrar) ---- */
+  .splashscreen{align-items:center}
+  .splashscreen .intro-in{text-align:center;max-width:320px}
+  .splashscreen .i-r{display:none}
+  .splash-logo{position:relative;width:104px;height:104px;margin:0 auto 30px}
+  .splash-logo .sl-ring{position:absolute;inset:0;margin:auto;border-radius:50%;border:2px solid var(--amber);opacity:0;animation:slpulse 2.6s ease-out infinite}
+  .splash-logo .sl-ring:nth-child(1){width:34px;height:34px;animation-delay:0s}
+  .splash-logo .sl-ring:nth-child(2){width:66px;height:66px;animation-delay:.35s}
+  .splash-logo .sl-ring:nth-child(3){width:100px;height:100px;animation-delay:.7s}
+  .splash-logo .sl-core{position:absolute;inset:0;margin:auto;width:13px;height:13px;border-radius:50%;background:var(--amber);box-shadow:0 0 16px var(--amber);animation:slcore 2.6s ease-in-out infinite}
+  @keyframes slpulse{0%{opacity:0;transform:scale(.65)}22%{opacity:.85}100%{opacity:0;transform:scale(1.1)}}
+  @keyframes slcore{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.28);opacity:.7}}
+  .splash-name{font-family:var(--mono);font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .splashscreen h1{font-size:29px;margin-bottom:0}
+  .splashscreen .splash-tap{margin-top:34px}
+  /* ---- overlay de grabación por voz ---- */
+  .recovl{z-index:130}
+  .reccard{text-align:center}
+  .rec-orb{position:relative;width:98px;height:98px;margin:2px auto 22px;display:grid;place-items:center;border-radius:50%;background:var(--clay);color:#fff}
+  .rec-orb svg{position:relative;z-index:2}
+  .rec-orb .rec-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--clay);opacity:0;animation:recwave 1.9s ease-out infinite}
+  .rec-orb .rec-wave:nth-child(2){animation-delay:.63s}
+  .rec-orb .rec-wave:nth-child(3){animation-delay:1.26s}
+  .rec-orb.proc{background:var(--surface2);color:var(--amber)}
+  .rec-orb.proc svg{animation:spin 1s linear infinite}
+  @keyframes recwave{0%{opacity:.55;transform:scale(1)}100%{opacity:0;transform:scale(1.85)}}
+  @media (prefers-reduced-motion:reduce){ .fadeup{animation-duration:.01s;animation-delay:0s} .sl-ring,.rec-wave{animation:none;opacity:.25} }
   .ovl{position:fixed;inset:0;z-index:90;background:rgba(16,13,11,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:22px;animation:fadein .25s ease both}
   .ovlcard{position:relative;overflow:hidden;width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px 22px;text-align:center;animation:pop .4s cubic-bezier(.2,.9,.3,1.25) both}
   .ovlcard h3{font-size:20px;font-weight:600;margin:6px 0 8px}
@@ -420,11 +446,11 @@
   .accsum{text-transform:none;font-weight:500;letter-spacing:0;color:var(--faint);font-size:12px;margin-left:9px;font-family:var(--mono)}
   .section.acc.open .acc-head .accsum{color:var(--amber)}
   /* ---- fichaje ---- */
-  .punch{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 14px}
+  .punch{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 14px}
   .punch.on{border-color:var(--amber);background:var(--amber-soft)}
   .punch-k{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
   .punch.on .punch-k{color:var(--amber)}
-  .punch-time{font-size:30px;font-weight:700;color:var(--text);line-height:1.1;margin-top:3px}
+  .punch-time{font-size:27px;font-weight:700;color:var(--text);line-height:1.1;margin-top:3px}
   .punch.on .punch-time{color:var(--amber)}
   .punch-elapsed{font-size:13.5px;color:var(--muted);margin-top:5px}
   .punch-sess{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
@@ -615,9 +641,6 @@ function ingestVac(tasks){
 }
 function vacRecBtn(){
   if(!vacSupported())return '';
-  var st=S.rec||"idle";
-  if(st==="rec") return '<button class="bigbtn rec recbtn" data-action="vac-rec" style="margin-bottom:11px">'+IC.stop(16)+' Parar y procesar</button>';
-  if(st==="proc") return '<button class="bigbtn ghost recbtn proc" disabled style="margin-bottom:11px">'+IC.spin(16)+' Procesando tu voz…</button>';
   return '<button class="bigbtn am recbtn" data-action="vac-rec" style="margin-bottom:11px">'+IC.mic(17)+' Soltar por voz</button>';
 }
 var GEN={id:"_",name:"Cierre y otros",color:"#A69B8B"};
@@ -775,14 +798,25 @@ function addBlock(){
   s=String(s||"").trim(); e=String(e||"").trim();
   if(!s||!e){toast("Pon hora de inicio y de fin.");return;}
   if(hmToMin(e)<=hmToMin(s)){toast("La hora de fin debe ser mayor que la de inicio.");return;}
-  var d=day(); d.blocks=d.blocks||[]; d.blocks.push({s:s,e:e});
+  var d=day(); d.blocks=d.blocks||[]; d.blocks.push({id:uid(),s:s,e:e});
   d.blocks.sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);});
-  blkDraftS=""; blkDraftE=""; touchDay(); save(); render();
+  blkDraftS=""; blkDraftE=""; d.arr=now(); touchDay(); save(); render();
 }
-function removeBlock(i){ var d=day(); i=parseInt(i,10); if(d.blocks&&d.blocks[i]){ d.blocks.splice(i,1); touchDay(); save(); render(); } }
-function mergeBlocksPick(aBase,aOther){
-  var a=(aBase&&aBase.blocks), b=(aOther&&aOther.blocks);
-  return (a&&a.length)?a:(b||a||[]);
+/* al quitar un bloque dejamos lapida (como con las tareas) para que el merge de
+   otro aparato no lo resucite como fantasma */
+function blockKey(b){ return (b&&b.id)||((b&&b.s)+"-"+(b&&b.e)); }
+function removeBlock(i){ var d=day(); i=parseInt(i,10); if(d.blocks&&d.blocks[i]){ bury(d,blockKey(d.blocks[i])); d.blocks.splice(i,1); d.arr=now(); touchDay(); save(); render(); } }
+function mergeBlocks(aBase,aOther,gone){
+  gone=gone||{};
+  var seen={},out=[];
+  ((aBase&&aBase.blocks)||[]).concat((aOther&&aOther.blocks)||[]).forEach(function(b){
+    if(!b||!b.s||!b.e)return;
+    var k=blockKey(b);
+    if(gone[k]||seen[k])return;
+    seen[k]=1; out.push(b);
+  });
+  out.sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);});
+  return out;
 }
 
 /* ============ ¿salió todo lo que había marcado? ============ */
@@ -1274,7 +1308,7 @@ function mergeDay(da,db2){
   out.harvested=!!(base.harvested||other.harvested);
   out.full=!!(base.full||other.full);
   out.punch=mergePunch(base.punch,other.punch,base.u||0,other.u||0);
-  out.blocks=mergeBlocksPick(aBase,aOther);
+  out.blocks=mergeBlocks(aBase,aOther,gone);
   out.u=Math.max(base.u||0,other.u||0);
   out.arr=Math.max(da.arr||0,db2.arr||0);
   return out;
@@ -2404,6 +2438,20 @@ function overlayHtml(){
       '<p class="wup-n">Ahora ve y gástatelo de verdad. Eso era el trato.</p>'+
       '<button class="bigbtn am" data-action="bought-ok">Hecho</button></div></div>';
   }
+  if(S.rec==="rec"||S.rec==="proc"){
+    if(S.rec==="proc")
+      return '<div class="ovl recovl"><div class="ovlcard reccard">'+
+        '<div class="rec-orb proc">'+IC.spin(30)+'</div>'+
+        '<h3>Procesando tu voz…</h3>'+
+        '<p>Estoy repartiendo lo que has dicho en áreas y tareas. Un momento.</p>'+
+        '</div></div>';
+    return '<div class="ovl recovl"><div class="ovlcard reccard">'+
+      '<div class="rec-orb"><span class="rec-wave"></span><span class="rec-wave"></span><span class="rec-wave"></span>'+IC.mic(30)+'</div>'+
+      '<h3>Te escucho</h3>'+
+      '<p>Suelta todo lo que tengas en la cabeza. Cuando acabes, para y lo convierto en tareas.</p>'+
+      '<button class="bigbtn rec" data-action="vac-rec" style="margin-top:20px">'+IC.stop(16)+' Parar y procesar</button>'+
+      '</div></div>';
+  }
   return '';
 }
 
@@ -2635,10 +2683,10 @@ function dayToRecover(){
 function introHtml(){
   if(S.intro&&S.intro.stage==="rec")return recoverHtml(S.intro.k);
   if(S.intro&&S.intro.stage==="splash")
-    return '<div class="intro-s" data-action="splash-go"><div class="intro-in splash">'+
-      '<div class="i-r fadeup d1">'+IC.target(26)+'</div>'+
-      '<h1 class="fadeup d2">'+esc(greeting())+'</h1>'+
-      '<div class="i-q fadeup d3">'+esc(quoteOfDay())+'</div>'+
+    return '<div class="intro-s splashscreen" data-action="splash-go"><div class="intro-in splash">'+
+      '<div class="splash-logo"><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-core"></span></div>'+
+      '<div class="splash-name fadeup d2">Briefing</div>'+
+      '<h1 class="fadeup d3">'+esc(greeting())+'</h1>'+
       '<div class="splash-tap fadeup d4">Toca para entrar</div>'+
       '</div></div>';
   var k=S.intro?S.intro.k:null;
@@ -3000,7 +3048,7 @@ function boot(){
     var _rk=dayToRecover();
     if(!needsWelcome()){
       if(!introDone()) S.intro={stage:"hello",k:_rk};          /* primer arranque del día: recibe + arrastra lo de ayer */
-      else { S.intro={stage:"splash"}; setTimeout(dismissSplash,1400); }  /* resto de arranques: bienvenida breve */
+      else { S.intro={stage:"splash"}; }  /* resto de arranques: bienvenida, entra al tocar */
     }
     if(!S.intro){ harvestCarry(); applyCarry(); }
     S.area=(DB.areas[0]||{}).id||"neg"; S.extraArea=S.area;
