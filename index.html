@@ -388,7 +388,7 @@
   /* portal de partículas (canvas) del splash y del orbe */
   canvas.portalfx{display:block;width:100%;height:100%}
   .rec-orb .portalfx{width:100%;height:100%}
-  .splashscreen .portalfx{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+  .splashscreen .portalfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
   .splashscreen .intro-in{position:relative;z-index:1}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
@@ -2573,9 +2573,22 @@ function runPortal(cv){
   var ctx=cv.getContext&&cv.getContext("2d"); if(!ctx)return;
   var dpr=Math.min(window.devicePixelRatio||1,2),reduce=false;
   try{reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){}
-  function resize(){ var r=cv.getBoundingClientRect(); cv.width=Math.max(2,Math.round((r.width||cv.clientWidth||2)*dpr)); cv.height=Math.max(2,Math.round((r.height||cv.clientHeight||2)*dpr)); }
-  resize(); cv._resize=resize;
   var big=(cv.getAttribute("data-portal")==="splash");
+  /* medición robusta: en iOS el elemento puede no tener tamaño en el primer
+     frame; reintentamos hasta que lo tenga */
+  function measure(){
+    var w=0,h=0; try{var r=cv.getBoundingClientRect(); w=r.width; h=r.height;}catch(e){}
+    if(!w||!h){ w=cv.clientWidth||cv.offsetWidth||0; h=cv.clientHeight||cv.offsetHeight||0; }
+    if((!w||!h)&&big){ w=window.innerWidth||document.documentElement.clientWidth||0; h=window.innerHeight||document.documentElement.clientHeight||0; }
+    return {w:w,h:h};
+  }
+  function resize(){
+    var m=measure(); if(!m.w||!m.h) return false;
+    var W=Math.max(2,Math.round(m.w*dpr)), H=Math.max(2,Math.round(m.h*dpr));
+    if(cv.width!==W) cv.width=W; if(cv.height!==H) cv.height=H;
+    return true;
+  }
+  var sized=false; cv._resize=function(){ sized=resize(); };
   var N=big?170:120;
   var COL=["rgba(173,164,150,","rgba(173,164,150,","rgba(173,164,150,","rgba(227,154,59,","rgba(201,128,90,","rgba(250,247,241,"];
   var P=[],i;
@@ -2590,6 +2603,7 @@ function runPortal(cv){
   }
   var t0=performance.now();
   function draw(now){
+    if(!sized){ sized=resize(); if(!sized){ _portalRAF=requestAnimationFrame(draw); return; } }
     var dt=(now-t0)/1000,w=cv.width,h=cv.height;
     ctx.clearRect(0,0,w,h);
     var cx=w/2,cy=h/2,R=Math.min(w,h)*(big?0.44:0.47),ys=0.8;
@@ -2607,7 +2621,9 @@ function runPortal(cv){
   }
   if(reduce) draw(t0); else _portalRAF=requestAnimationFrame(draw);
 }
-window.addEventListener("resize",function(){ if(_portalCv&&_portalCv._resize)_portalCv._resize(); });
+function _portalResize(){ if(_portalCv&&_portalCv._resize)_portalCv._resize(); }
+window.addEventListener("resize",_portalResize);
+window.addEventListener("orientationchange",function(){ setTimeout(_portalResize,200); });
 
 function render(){
   if(!S.ready)return;
