@@ -2571,8 +2571,7 @@ function mountPortal(){
 }
 function runPortal(cv){
   var ctx=cv.getContext&&cv.getContext("2d"); if(!ctx)return;
-  var dpr=Math.min(window.devicePixelRatio||1,2),reduce=false;
-  try{reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){}
+  var dpr=Math.min(window.devicePixelRatio||1,2);
   var big=(cv.getAttribute("data-portal")==="splash");
   /* medición robusta: en iOS el elemento puede no tener tamaño en el primer
      frame; reintentamos hasta que lo tenga */
@@ -2601,10 +2600,13 @@ function runPortal(cv){
       col:COL[(Math.random()*COL.length)|0],
       base:0.16+Math.random()*0.5,tw:Math.random()*6.2832,tws:0.5+Math.random()*1.7});
   }
-  var t0=performance.now();
-  function draw(now){
+  /* reloj por Date.now(): en iOS el timestamp de requestAnimationFrame puede no
+     compartir base con performance.now() y dejar la animación congelada */
+  var t0=Date.now();
+  function draw(){
+    if(cv!==_portalCv) return;              /* se desmontó o cambió: cortar este bucle */
     if(!sized){ sized=resize(); if(!sized){ _portalRAF=requestAnimationFrame(draw); return; } }
-    var dt=(now-t0)/1000,w=cv.width,h=cv.height;
+    var dt=(Date.now()-t0)/1000,w=cv.width,h=cv.height;
     ctx.clearRect(0,0,w,h);
     var cx=w/2,cy=h/2,R=Math.min(w,h)*(big?0.44:0.47),ys=0.8;
     var g=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.15);
@@ -2617,9 +2619,9 @@ function runPortal(cv){
       ctx.beginPath(); ctx.arc(x,y,p.s*dpr,0,6.2832);
       ctx.fillStyle=p.col+al.toFixed(3)+")"; ctx.fill();
     }
-    if(!reduce) _portalRAF=requestAnimationFrame(draw);
+    _portalRAF=requestAnimationFrame(draw);
   }
-  if(reduce) draw(t0); else _portalRAF=requestAnimationFrame(draw);
+  _portalRAF=requestAnimationFrame(draw);
 }
 function _portalResize(){ if(_portalCv&&_portalCv._resize)_portalCv._resize(); }
 window.addEventListener("resize",_portalResize);
