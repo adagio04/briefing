@@ -765,11 +765,25 @@ function topLabel(){ return topMax()===3?"Las 3 de hoy":"Esenciales de hoy"; }
 function punchOf(d){ d=d||day(); if(!d.punch)d.punch={open:0,sessions:[]}; return d.punch; }
 function punchActive(d){ return !!punchOf(d).open; }
 /* milisegundos trabajados en el día, incluyendo la sesión en curso */
+function dayEndMs(k){ return dateOfKey(k).getTime()+86400000; } /* medianoche siguiente */
 function punchMs(d){
-  var p=punchOf(d),ms=0;
-  (p.sessions||[]).forEach(function(s){ if(s&&s.s&&s.e&&s.e>s.s) ms+=s.e-s.s; });
-  if(p.open) ms+=Math.max(0,now()-p.open);
+  var p=punchOf(d),ms=0,cap=(d&&d.date)?dayEndMs(d.date):Infinity;
+  /* toda sesión (cerrada o abierta) se topa a la medianoche de SU día: si te
+     dejas el cronómetro encendido no suma horas fantasma de la noche ni de días
+     siguientes, y arregla al vuelo los días que ya quedaron inflados */
+  (p.sessions||[]).forEach(function(s){ if(s&&s.s){ var e=Math.min(s.e||0,cap); if(e>s.s) ms+=e-s.s; } });
+  if(p.open){ ms+=Math.max(0,Math.min(now(),cap)-p.open); }
   return ms;
+}
+/* cierra cronómetros que quedaron encendidos de días anteriores, topados a su medianoche */
+function sealStalePunch(){
+  var changed=false,k;
+  for(k in (DB.days||{})){ var d=DB.days[k],p=d&&d.punch;
+    if(p&&p.open){ var cap=dayEndMs(k);
+      if(now()>=cap){ if(cap>p.open)(p.sessions=p.sessions||[]).push({s:p.open,e:cap}); p.open=0; d.u=now(); changed=true; }
+    }
+  }
+  if(changed)save({nosync:true});
 }
 function fmtDur(ms){
   var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
@@ -3222,6 +3236,7 @@ function boot(){
       if(mig){ DB=mig; toast("Datos anteriores recuperados"); }
     }
     day();
+    sealStalePunch();
     var _rk=dayToRecover();
     if(!needsWelcome()){
       if(!introDone()) S.intro={stage:"hello",k:_rk};          /* primer arranque del día: recibe + arrastra lo de ayer */
@@ -3259,6 +3274,7 @@ var bootDay=todayKey();
 setInterval(function(){
   if(todayKey()!==bootDay){
     bootDay=todayKey();
+    sealStalePunch();
     day();
     if(!introDone()&&!needsWelcome()){ S.intro={stage:"hello",k:dayToRecover()}; }
     else { harvestCarry(); applyCarry(); }
