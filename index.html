@@ -443,6 +443,15 @@
   .hero-hint{font-size:13px;color:var(--muted);margin-top:8px;max-width:280px;line-height:1.45}
   .hero-stop{width:auto;min-width:210px;margin-top:18px;border-radius:999px}
   .stage.proc .orb{opacity:.72}
+  .checklist{display:flex;flex-direction:column;gap:7px}
+  .checklist .checkrow{width:100%}
+  .slotghost{opacity:.5;cursor:default;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:11px}
+  .slotghost .cbox{border-style:dashed}
+  .close-sum{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px}
+  .close-sum b{color:var(--text);font-size:16px}
+  .seg2{display:flex;gap:6px}
+  .segbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .segbtn.on{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
   .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
@@ -1776,169 +1785,116 @@ function quoteHtml(){
 }
 
 /* ============ HOY ============ */
-function renderAM(){
-  var d=day(),h='';
-  h+=heroOrb();
-
+/* ============ pantalla de HOY (una sola, sin modos) ============ */
+function vaciadoBlock(d){
   var pending=(d.pool||[]).filter(function(p){return p.from;});
   var pool='';
   if(pending.length){
-    pool+='<div class="carry"><span class="ci">'+IC.up(16)+'</span><span class="ct">Venías con <b>'+pending.length+'</b> de días anteriores. '+
-          'Quedaron sin terminar, y hoy vuelven a estar sobre la mesa: decide otra vez si entran en lo esencial, pasan a extra o se van.</span></div>';
+    pool+='<div class="carry"><span class="ci">'+IC.up(16)+'</span><span class="ct">Venías con <b>'+pending.length+'</b> de días anteriores.</span></div>';
   }
   pool+='<div class="row"><input id="draft" class="inp" placeholder="Escribe y pulsa Enter" value="'+esc(draft)+'"/>'+
     '<button class="iconbtn" data-action="add-pool">'+IC.plus(18)+'</button></div>'+
     areaChips(S.area,"pick-area")+'<div class="pool">';
-  if(!(d.pool||[]).length) pool+='<div class="empty">Nada aún. Empieza a soltar.</div>';
+  if(!(d.pool||[]).length) pool+='<div class="empty">Nada aún.</div>';
   (d.pool||[]).forEach(function(p){
     var isTop=(d.top3||[]).indexOf(p.id)>=0, rank=(d.top3||[]).indexOf(p.id)+1;
     pool+='<div class="pool-item'+(isTop?' top':(p.extra?' xtra':''))+'">'+
-      '<button class="rank" data-action="toggle-top" data-id="'+p.id+'" title="Marcar como esencial">'+(isTop?String(rank):'<i class="rdot"></i>')+'</button>'+
-      '<button class="xbtn" data-action="toggle-extra-plan" data-id="'+p.id+'" title="Marcar como tarea extra">+</button>'+
-      '<button class="adot" data-action="cycle-area" data-id="'+p.id+'" title="Cambiar de área"><i style="background:'+areaColor(p.area)+'"></i></button>'+
+      '<button class="rank" data-action="toggle-top" data-id="'+p.id+'" title="Esencial">'+(isTop?String(rank):'<i class="rdot"></i>')+'</button>'+
+      '<button class="xbtn" data-action="toggle-extra-plan" data-id="'+p.id+'" title="Extra">+</button>'+
+      '<button class="adot" data-action="cycle-area" data-id="'+p.id+'" title="Área"><i style="background:'+areaColor(p.area)+'"></i></button>'+
       '<span class="pool-text">'+(p.from?'<span class="tagfrom">Ayer</span>':'')+esc(p.text)+'</span>'+
       '<button class="ghostx" data-action="remove-pool" data-id="'+p.id+'">'+IC.x(15)+'</button></div>';
   });
-  pool+='</div>'+
-    '<div class="legend2">'+
-    '<span class="lg l3"><b>1</b>Esencial'+(gameOn()?' · 10 puntos':'')+'</span>'+
-    '<span class="lg lx"><b>+</b>Tarea extra'+(gameOn()?' · 6 puntos':'')+'</span>'+
-    '</div>';
-  h+=section('Vaciado mental','',pool);
-
-  var slots='<div class="slots">',tm=topMax();
-  for(var i=0;i<tm;i++){
+  pool+='</div>';
+  return section('Vaciado mental','',pool);
+}
+function las3Block(d){
+  var tm=topMax(),rows='<div class="checklist">',i;
+  for(i=0;i<tm;i++){
     var id=(d.top3||[])[i];
-    slots+='<div class="slot'+(id?' filled':'')+'"><span class="slot-n">0'+(i+1)+'</span><span class="slot-t">'+(id?esc(textOf(id)):'—')+'</span></div>';
+    if(id){ var it=(d.pool||[]).filter(function(x){return x.id===id;})[0]||{};
+      rows+=checkRow({action:"toggle-done-top",id:id,n:"0"+(i+1),text:textOf(id),area:it.area,done:!!(d.doneTop||{})[id],pts:P.top});
+    }else{
+      rows+='<div class="checkrow slotghost"><span class="cbox"></span><span class="cnum">0'+(i+1)+'</span><span class="ctext">—</span></div>';
+    }
   }
-  slots+='</div>';
-  h+=section(topLabel(),'Si solo salen estas, el día ha valido. Lo demás va como extra.',slots);
-
-  h+=workBlock();
-
-  h+=metasHoyBlock();
-
-  var planned=(d.pool||[]).filter(function(p){return p.extra&&(d.top3||[]).indexOf(p.id)<0;});
-  var pl='<div class="pool">';
-  if(!planned.length) pl+='<div class="empty">Ninguna marcada. Pulsa el «+» de cualquier tarea del vaciado.</div>';
-  planned.forEach(function(p){
-    pl+='<div class="pool-item xtra"><i class="cdot" style="background:'+areaColor(p.area)+'"></i>'+
-      '<span class="pool-text">'+esc(p.text)+'</span>'+
-      (gameOn()?'<span class="cpts">+'+P.extra+'</span>':'')+'</div>';
-  });
-  pl+='</div>';
-  h+=sectionAcc('homeExtras','Extras de hoy'+(planned.length?'<span class="accsum">'+planned.length+'</span>':''),'Se marcan por la tarde, en el cierre.',pl);
-
-  var dl='<div class="dailies">';
+  rows+='</div>';
+  return section(topLabel(),'',rows);
+}
+function diariasBlock(d){
+  if(!(DB.dailies||[]).length) return '';
+  var drows='<div class="checklist">';
   (DB.dailies||[]).forEach(function(x){
-    dl+='<div class="daily"><i class="cdot" style="background:'+areaColor(x.area)+'"></i><span class="dtext">'+esc(x.text)+'</span></div>';
+    drows+=checkRow({action:"toggle-done-daily",id:x.id,text:x.text,area:x.area,done:!!(d.doneDaily||{})[x.id],pts:P.daily});
   });
-  if(!(DB.dailies||[]).length) dl+='<div class="empty">Ninguna. Se editan en Ajustes.</div>';
-  dl+='</div>';
-  var nDailies=(DB.dailies||[]).length;
-  h+=sectionAcc('homeDailies','Diarias fijas<span class="accsum">'+nDailies+'</span>','Lo que se comprueba sí o sí.',dl,
-    '<button class="minibtn ghost" data-action="go-ajustes">Editar</button>');
-
+  drows+='</div>';
+  return section('Diarias fijas','',drows,'<button class="minibtn ghost" data-action="go-ajustes">Editar</button>');
+}
+function extrasBlock(d){
+  var planned=(d.pool||[]).filter(function(x){return x.extra&&(d.top3||[]).indexOf(x.id)<0;});
+  var loose=(d.extras||[]).filter(function(x){return !x.poolId;});
+  if(!planned.length&&!loose.length&&!extraDraft){
+    // sin extras aún: solo el campo para añadir, sin ruido
+    var add0='<div class="row"><input id="extraDraft" class="inp sm" placeholder="Algo extra que hiciste" value="'+esc(extraDraft)+'"/>'+
+      '<button class="iconbtn teal" data-action="add-extra">'+IC.plus(18)+'</button></div>'+areaChips(S.extraArea,"pick-extra-area");
+    return sectionAcc('homeExtras','Extras de hoy','',add0);
+  }
+  var ex='<div class="checklist">';
+  planned.forEach(function(x){
+    ex+=checkRow({action:"toggle-done-extra",id:x.id,text:x.text,area:x.area,ex:true,done:!!extraEntryOf(d,x.id),pts:P.extra});
+  });
+  ex+='</div>';
+  ex+='<div class="row" style="margin-top:'+(planned.length?'10px':'0')+'"><input id="extraDraft" class="inp sm" placeholder="Algo extra que hiciste" value="'+esc(extraDraft)+'"/>'+
+    '<button class="iconbtn teal" data-action="add-extra">'+IC.plus(18)+'</button></div>'+
+    areaChips(S.extraArea,"pick-extra-area")+'<div class="pool">';
+  loose.forEach(function(x){
+    ex+='<div class="pool-item xtra"><i class="cdot" style="background:'+areaColor(x.area)+'"></i>'+
+      '<span class="pool-text">'+esc(x.text)+'</span>'+
+      (gameOn()?'<span class="cpts">+'+P.extra+'</span>':'')+
+      '<button class="ghostx" data-action="remove-extra" data-id="'+x.id+'">'+IC.x(15)+'</button></div>';
+  });
+  ex+='</div>';
+  return section('Extras de hoy'+((planned.length+loose.length)?'<span class="accsum">'+(planned.length+loose.length)+'</span>':''),'',ex);
+}
+function closeBlock(d){
+  var p=dayPoints(d),h='<div class="closebox">';
+  if(gameOn()) h+='<div class="close-sum"><b class="mono">'+p.total+'</b> pts · '+p.base+' esenciales · '+p.extra+' extra</div>';
+  else{ var c=dayCount(d); h+='<div class="close-sum"><b class="mono">'+c.total+'</b> hechas · '+c.stars+' de Las 3</div>'; }
+  h+='<button class="bigbtn pm" data-action="close-day">'+IC.moon(17)+' Cerrar el día</button></div>';
+  return h;
+}
+function closedSummary(d){
+  var u=dayUnits(d), lines=closingLines(), tn=(d.top3||[]).length||3, wms=workedMsForDay(todayKey());
+  var h='<div class="closed'+(S.justClosed?' anim':'')+'"><div class="ring">'+IC.check(28)+'</div>'+
+     '<h2>'+esc(userName()?("Cerrado, "+userName()+"."):"Trabajo cerrado.")+'</h2>'+
+     '<div class="cstars">'+starsRow(u.stars,tn,16)+'</div>'+
+     (gameOn()?'<p class="ctotal mono">+'+u.total+' puntos hoy</p>':'<p class="ctotal mono">'+u.total+' cosas hechas hoy</p>')+
+     (wms>60000?'<p class="ctotal mono">'+fmtHm(wms)+' fichados hoy</p>':'')+
+     '<div class="clines">';
+  lines.forEach(function(t,i){ h+='<p class="cl" style="animation-delay:'+(0.55+i*0.32)+'s">'+IC.spark(13)+'<span>'+esc(t)+'</span></p>'; });
+  h+='</div><button class="minibtn ghost cbtn" data-action="reopen">Volver a abrir</button></div>';
+  return h;
+}
+function renderHoy(){
+  var d=day();
+  var top='<div class="topbar"><div class="tbrand">Briefing</div>'+
+      '<div class="tz"><span class="tdate">'+esc(weekShort()+' · '+shortDate())+'</span>'+
+        '<button class="tgl" data-action="toggle-theme" aria-label="Cambiar tema">'+(appTheme()==="light"?IC.moon(16):IC.sun(16))+'</button></div></div>';
+  if(d.closed) return top+closedSummary(d);
+  var h=top+heroOrb();
+  h+=vaciadoBlock(d);
+  h+=las3Block(d);
+  h+=extrasBlock(d);
+  h+=diariasBlock(d);
+  h+=workBlock();
+  h+=metasHoyBlock();
   if(notebookOn()){
     var lib='<pre class="brief-pre selectable">'+esc(briefingText())+'</pre>'+
       '<button class="bigbtn am" data-action="copy">'+IC.copy(17)+' Copiar para la libreta</button>';
-    h+=sectionAcc('homeLib','Para la libreta','Copia esto limpio en tu cuaderno. Ese es el filtro.',lib);
+    h+=sectionAcc('homeLib','Para la libreta','',lib);
   }
+  h+=closeBlock(d);
   return h;
-}
-
-function renderPM(){
-  var d=day(),h='',p=dayPoints(d);
-  if(!d.closed){
-    h+='<p class="intro pm">Marca lo hecho. Apunta lo extra. Lo que sobra pasa a mañana. Luego se cierra y se acabó.</p>';
-    h+=workBlock();
-    h+=metasHoyBlock();
-
-    var rows='';
-    if(!(d.top3||[]).length)rows+='<div class="empty">No elegiste nada esencial esta mañana.</div>';
-    rows+='<div class="slots">';
-    (d.top3||[]).forEach(function(id,i){
-      var it=(d.pool||[]).filter(function(x){return x.id===id;})[0]||{};
-      rows+=checkRow({action:"toggle-done-top",id:id,n:"0"+(i+1),text:textOf(id),area:it.area,done:!!(d.doneTop||{})[id],pts:P.top});
-    });
-    rows+='</div>';
-    h+=section(topLabel(),'Sé honesto. Hecho o no hecho.',rows);
-
-    var drows='<div class="slots">';
-    (DB.dailies||[]).forEach(function(x){
-      drows+=checkRow({action:"toggle-done-daily",id:x.id,text:x.text,area:x.area,done:!!(d.doneDaily||{})[x.id],pts:P.daily});
-    });
-    if(!(DB.dailies||[]).length)drows+='<div class="empty">Ninguna diaria fija.</div>';
-    drows+='</div>';
-    h+=section('Diarias fijas','¿Comprobado?',drows);
-
-    /* extras planificados esta mañana: se marcan como cualquier otra cosa */
-    var planned=(d.pool||[]).filter(function(x){return x.extra&&(d.top3||[]).indexOf(x.id)<0;});
-    var ex='<div class="slots">';
-    planned.forEach(function(x){
-      ex+=checkRow({action:"toggle-done-extra",id:x.id,text:x.text,area:x.area,ex:true,
-                    done:!!extraEntryOf(d,x.id),pts:P.extra});
-    });
-    ex+='</div>';
-    /* y lo que salió sin estar previsto */
-    ex+='<div class="row" style="margin-top:'+(planned.length?'10px':'0')+'"><input id="extraDraft" class="inp sm" placeholder="Algo que hiciste de más" value="'+esc(extraDraft)+'"/>'+
-      '<button class="iconbtn teal" data-action="add-extra">'+IC.plus(18)+'</button></div>'+
-      areaChips(S.extraArea,"pick-extra-area")+'<div class="pool">';
-    var loose=(d.extras||[]).filter(function(x){return !x.poolId;});
-    if(!loose.length&&!planned.length) ex+='<div class="empty">Nada extra. Perfecto también.</div>';
-    loose.forEach(function(x){
-      ex+='<div class="pool-item xtra"><i class="cdot" style="background:'+areaColor(x.area)+'"></i>'+
-        '<span class="pool-text">'+esc(x.text)+'</span>'+
-        (gameOn()?'<span class="cpts">+'+P.extra+'</span>':'')+
-        '<button class="ghostx" data-action="remove-extra" data-id="'+x.id+'">'+IC.x(15)+'</button></div>';
-    });
-    ex+='</div>';
-    h+=section('Extras de hoy','Las que marcaste con «+» por la mañana, más lo que surgió sobre la marcha.',ex);
-
-    var full=dayComplete(d);
-    h+='<div class="closebox">';
-    if(gameOn()){
-      h+='<p>Hoy llevas <b class="mono">'+p.total+'</b> puntos ('+p.base+' esenciales · '+p.extra+' extra).</p>'+
-         '<p class="'+(full?'okline':'noline')+'">'+(full
-           ?'Está todo lo que marcaste. Cerrar ahora suma '+P.close+' puntos de propina.'
-           :'Queda algo sin marcar, así que el cierre no dará propina hoy. Puedes cerrar igual: los puntos de lo hecho no se tocan.')+'</p>';
-    }else{
-      var c=dayCount(d);
-      h+='<p>Hoy llevas <b class="mono">'+c.total+'</b> cosas hechas ('+c.stars+' de Las 3).</p>';
-    }
-    h+='<p>Lo que no esté marcado pasará solo a tu vaciado de mañana, con la etiqueta «Ayer». No lo cargues esta noche.</p>'+
-       '<button class="bigbtn pm" data-action="close-day">'+IC.moon(17)+' Cerrar el día</button></div>';
-  }else{
-    var u=dayUnits(d), lines=closingLines(), tn=(d.top3||[]).length||3, wms=workedMsForDay(todayKey());
-    h+='<div class="closed'+(S.justClosed?' anim':'')+'"><div class="ring">'+IC.check(28)+'</div>'+
-       '<h2>'+esc(userName()?("Cerrado, "+userName()+"."):"Trabajo cerrado.")+'</h2>'+
-       '<p>Ahora estás donde estés — no en el móvil. Lo pendiente te espera mañana en el vaciado. Ve a estar presente.</p>'+
-       '<div class="cstars">'+starsRow(u.stars,tn,16)+'</div>'+
-       (gameOn()?'<p class="ctotal mono">+'+u.total+' puntos hoy</p>'
-                :'<p class="ctotal mono">'+u.total+' cosas hechas hoy</p>')+
-       (wms>60000?'<p class="ctotal mono">'+fmtHm(wms)+' fichados hoy</p>':'')+
-       '<div class="clines">';
-    lines.forEach(function(t,i){
-      h+='<p class="cl" style="animation-delay:'+(0.55+i*0.32)+'s">'+IC.spark(13)+'<span>'+esc(t)+'</span></p>';
-    });
-    h+='</div><button class="minibtn ghost cbtn" data-action="reopen">Volver a abrir</button></div>';
-  }
-  return h;
-}
-
-function renderHoy(){
-  return '<div class="topbar">'+
-      '<div class="tbrand">Briefing</div>'+
-      '<div class="tz">'+
-        '<span class="tdate">'+esc(weekShort()+' · '+shortDate())+'</span>'+
-        '<button class="tgl" data-action="toggle-theme" aria-label="Cambiar tema">'+(appTheme()==="light"?IC.moon(16):IC.sun(16))+'</button>'+
-      '</div>'+
-    '</div>'+
-    '<div class="modes2">'+
-       '<button class="modebtn'+(S.mode==="am"?' on-am':'')+'" data-action="mode-am">'+IC.sun(15)+' Mañana</button>'+
-       '<button class="modebtn'+(S.mode==="pm"?' on-pm':'')+'" data-action="mode-pm">'+IC.moon(15)+' Cierre</button>'+
-     '</div>'+
-     ((S.mode==="am")?renderAM():renderPM());
 }
 
 /* ============ HISTÓRICO ============ */
@@ -2069,7 +2025,7 @@ function renderHist(){
       '<span class="lg"><i class="cdot" style="background:var(--border)"></i>Sin registro</span>'+
       '</div></div>';
   var chTitle=bk.mode==="day"?("Día a día · "+RL[rg.r]):(bk.mode==="week"?"Por semanas":"Por meses");
-  h+=section(chTitle,'Toca una barra para ver el detalle. Los huecos son huecos, no fallos.',ch);
+  h+=section(chTitle,'',ch);
 
   /* lista detallada (dentro del rango elegido) */
   var ks=allDayKeys().filter(function(k){return k>=rg.from&&k<=rg.to;}).slice().reverse();
@@ -2129,7 +2085,7 @@ function renderHist(){
     list+='</div>';
   });
   list+='</div>';
-  h+=section('Detalle del rango','Las tres estrellas de cada fila son Las 3 de ese día que diste por hechas: una estrella por cada una. Toca cualquier día para ver el detalle.',list);
+  h+=section('Detalle del rango','',list);
   return h;
 }
 
@@ -2235,6 +2191,11 @@ function renderAjustes(){
     '<div class="btnrow"><button class="acc" data-action="save-name">Guardar</button></div>'+
     '<div class="note">Se usa solo para hablarte a ti. Ahora mismo la app te diría: «'+esc(greeting())+'».</div>';
   h+=sectionAcc('me','Tu nombre','',me);
+
+  /* tema */
+  var th='<div class="seg2"><button class="segbtn'+(appTheme()==="dark"?" on":"")+'" data-action="set-theme" data-id="dark">'+IC.moon(15)+' Oscuro</button>'+
+    '<button class="segbtn'+(appTheme()==="light"?" on":"")+'" data-action="set-theme" data-id="light">'+IC.sun(15)+' Claro</button></div>';
+  h+=sectionAcc('tema','Tema','',th);
 
   /* modo */
   var md=swRow('toggle-game','Modo juego (puntos, monedas y mundos)',gameOn(),
@@ -2898,7 +2859,7 @@ function heroOrb(){
       '<span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span></span>'+
     '</'+tag+'>'+
     '<div class="hero-state'+(st==="rec"?" live":"")+'">'+esc(label)+'</div>'+
-    '<div class="hero-hint">'+esc(hint)+'</div>';
+    (st!=="idle"?'<div class="hero-hint">'+esc(hint)+'</div>':'');
   if(st==="rec") h+='<button class="bigbtn rec hero-stop" data-action="vac-rec">'+IC.stop(16)+' Parar y procesar</button>';
   h+='</div>';
   return h;
@@ -2925,7 +2886,6 @@ function render(){
   else if(S.tab==="hist")h=renderHist();
   else if(S.tab==="prog")h=renderProg();
   else h=renderAjustes();
-  if(S.tab==="hoy")h+='<div class="foot">Tus datos se guardan en este dispositivo. Mañana lo pendiente aparece en tu vaciado.</div>';
   app.innerHTML=h+overlayHtml();
   renderTabs();
   restoreFocus();
@@ -3230,6 +3190,7 @@ function onClick(e){
   else if(a==="add-block")addBlock();
   else if(a==="rm-block")removeBlock(id);
   else if(a==="toggle-theme"){ toggleTheme(); }
+  else if(a==="set-theme"){ DB.settings=DB.settings||{}; DB.settings.theme=(id==="light")?"light":"dark"; applyTheme(); DB.u=now(); save(); render(); }
   else if(a==="open-sched"){ S.schedOpen=true; render(); }
   else if(a==="close-sched"){ closeSched(); }
   else if(a==="sched-add"){ schedAddBlock(parseInt(id,10)); }
