@@ -2810,14 +2810,15 @@ function drawOrb(octx,ocv,dt,dpr){
   octx.fillStyle=bg; octx.fillRect(0,0,w,h);
   // reacción a la voz: cuando escucha, el orbe respira y brilla con el volumen
   var rec=(typeof S!=="undefined"&&S.rec==="rec"), lvl=rec?Math.min(1,_micLevel*2.4):0;
-  var spin=1+lvl*0.9;  // gira un poco más rápido al hablar
-  // pétalos (flor de color que gira)
+  // al hablar NO gira más rápido: fluye. La voz hincha los pétalos, empuja el
+  // color hacia fuera y mece el conjunto (sensación líquida), giro constante.
   octx.globalCompositeOperation=light?"source-over":"lighter";
-  var br=1+Math.sin(dt*0.8)*0.05+lvl*0.55, a0=(light?0.5:0.78)+lvl*0.18, a1=(light?0.2:0.28)+lvl*0.1;
+  var br=1+Math.sin(dt*0.8)*0.05+lvl*0.5, a0=(light?0.5:0.78)+lvl*0.16, a1=(light?0.2:0.28)+lvl*0.1;
+  var surge=lvl*0.14, sway=lvl*Math.sin(dt*2.1)*0.10;
   for(var i=0;i<ORB_PETALS.length;i++){ var b=ORB_PETALS[i];
-    var ang=b.base+dt*b.sp*spin+Math.sin(dt*0.45+b.base)*0.14;
+    var ang=b.base+dt*b.sp+Math.sin(dt*0.45+b.base)*0.14 + sway;
     octx.save(); octx.translate(cx,cy); octx.rotate(ang); octx.scale(b.rad*br,b.wid);
-    var off=R*b.off, rad=R*0.9;
+    var off=R*(b.off+surge), rad=R*0.9;
     var g=octx.createRadialGradient(off,0,0,off,0,rad);
     g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a0+")");
     g.addColorStop(0.45,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a1+")");
