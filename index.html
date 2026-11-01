@@ -22,8 +22,19 @@
     --teal:#46A29A; --teal-soft:rgba(70,162,154,0.13);
     --sage:#93B072; --clay:#C9805A;
     --ess:#ad8522; --ext:#8477f3;
+    --halo:110,120,134;              /* color de las partículas del halo */
     --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
     --sans:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  /* ---- tema claro (blanco/gris) ---- */
+  :root[data-theme="light"]{
+    --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#ECEEF1; --border:#E3E6EA;
+    --text:#23262B; --muted:#5B6168; --faint:#99A0A7; --ghost:#B7BCC2;
+    --amber:#C9801F; --amber-soft:rgba(201,128,31,0.12);
+    --teal:#2E9089; --teal-soft:rgba(46,144,137,0.12);
+    --sage:#5E8A3E; --clay:#B3663E;
+    --ess:#b98a1f; --ext:#6d5fe0;
+    --halo:120,128,140;
   }
   html,body{background:var(--bg);overscroll-behavior:none;-webkit-text-size-adjust:100%}
   body{
@@ -286,6 +297,7 @@
 
   /* ---- barra de pestañas ---- */
   .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;background:rgba(26,22,19,0.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:7px 10px calc(7px + env(safe-area-inset-bottom));z-index:60}
+  :root[data-theme="light"] .tabs{background:rgba(248,249,251,0.94)}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:transparent;border:none;color:var(--muted);font-size:10.5px;font-weight:600;padding:6px 2px;border-radius:11px;cursor:pointer}
   .tab.on{color:var(--amber);background:var(--amber-soft)}
 
@@ -407,6 +419,40 @@
   .sched-chips .ps.blk{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface);border-radius:6px;padding:3px 7px}
   .sched-free{font-size:12px;color:var(--faint);margin-bottom:9px}
   .schedcard .blkadd{margin-top:0}
+  /* ====== HOME rediseñada: topbar + orbe + halo ====== */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .tbrand{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase}
+  .tz{display:flex;align-items:center;gap:12px}
+  .tdate{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--faint);text-transform:uppercase}
+  .tgl{background:none;border:1px solid var(--border);border-radius:50%;width:33px;height:33px;display:grid;place-items:center;color:var(--muted);cursor:pointer;flex-shrink:0}
+  .modes2{display:flex;gap:4px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--border);width:-webkit-fit-content;width:fit-content;margin:0 auto 4px}
+  .home-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px 0 8px}
+  .home-hero .greet{font-size:22px;font-weight:300;letter-spacing:.2px;color:var(--text);margin-bottom:16px}
+  .stage{position:relative;width:300px;max-width:82vw;aspect-ratio:1/1;display:grid;place-items:center;background:none;border:none;padding:0;cursor:pointer}
+  .stage canvas.halofx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+  .orb{position:relative;width:46%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;z-index:2;display:grid;place-items:center;transition:transform .18s ease;
+    box-shadow:0 0 54px -6px rgba(120,150,255,.5), inset 0 2px 12px rgba(255,255,255,.35)}
+  :root[data-theme="light"] .orb{box-shadow:0 18px 50px -14px rgba(90,110,180,.5), inset 0 2px 12px rgba(255,255,255,.75)}
+  .orb .ob{position:absolute;border-radius:50%}
+  .orb .base{inset:0;background:radial-gradient(circle at 50% 42%, #2a3350 0%, #161b2e 70%)}
+  :root[data-theme="light"] .orb .base{background:radial-gradient(circle at 50% 42%, #ffffff 0%, #eef2fb 45%, #e4e9f6 78%)}
+  .orb .b1,.orb .b2,.orb .b3,.orb .b4,.orb .b5{filter:blur(13px);opacity:.95}
+  .orb .b1{width:80%;height:80%;left:-8%;top:4%;background:radial-gradient(circle,#2f7bff,#2f7bff00 70%);animation:haloM1 5.5s ease-in-out infinite}
+  .orb .b2{width:80%;height:80%;right:-14%;top:-6%;background:radial-gradient(circle,#9b5cff,#9b5cff00 70%);animation:haloM2 6.5s ease-in-out infinite}
+  .orb .b3{width:80%;height:80%;left:4%;bottom:-16%;background:radial-gradient(circle,#19d3ff,#19d3ff00 70%);animation:haloM3 6s ease-in-out infinite}
+  .orb .b4{width:66%;height:66%;right:0;bottom:-4%;background:radial-gradient(circle,#ff5ccb,#ff5ccb00 70%);animation:haloM1 4.8s ease-in-out infinite reverse}
+  .orb .b5{width:56%;height:56%;left:18%;top:18%;background:radial-gradient(circle,#2bf0c6,#2bf0c600 70%);animation:haloM2 5.2s ease-in-out infinite reverse}
+  .orb .gloss{position:absolute;inset:0;border-radius:50%;z-index:3;background:radial-gradient(55% 42% at 38% 26%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%)}
+  .orb .orb-ic{position:relative;z-index:4;color:#fff;opacity:0;transition:opacity .2s;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+  .stage:active .orb{transform:scale(.96)}
+  .stage.rec .orb-ic,.stage.proc .orb-ic{opacity:1}
+  .stage.rec .orb{box-shadow:0 0 70px -2px rgba(120,150,255,.7)}
+  .stage.proc .orb-ic svg{animation:spin 1s linear infinite}
+  @keyframes haloM1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(18%,14%) scale(1.2)}}
+  @keyframes haloM2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-16%,16%) scale(.86)}}
+  @keyframes haloM3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(12%,-18%) scale(1.18)}}
+  .hero-state{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;margin-top:16px}
+  .hero-hint{font-size:13px;color:var(--muted);margin-top:8px;max-width:280px;line-height:1.45}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
   .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
@@ -521,6 +567,12 @@
 <script>
 (function(){
 "use strict";
+
+/* aplica el tema cuanto antes (sin parpadeo) leyendo un espejo en localStorage */
+try{ if(localStorage.getItem("focus:theme")==="light") document.documentElement.setAttribute("data-theme","light"); }catch(e){}
+function appTheme(){ return (DB&&DB.settings&&DB.settings.theme==="light")?"light":"dark"; }
+function applyTheme(){ try{ document.documentElement.setAttribute("data-theme",appTheme()); localStorage.setItem("focus:theme",appTheme()); }catch(e){} }
+function toggleTheme(){ DB.settings=DB.settings||{}; DB.settings.theme=(appTheme()==="light")?"dark":"light"; applyTheme(); DB.u=now(); save(); render(); }
 
 /* ============ iconos (lucide, inline) ============ */
 function svg(p,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>';}
@@ -1723,11 +1775,10 @@ function quoteHtml(){
 /* ============ HOY ============ */
 function renderAM(){
   var d=day(),h='';
-  h+='<p class="intro">Vacía la cabeza. Elige lo esencial. Marca las que sean extra. Lo demás, suéltalo.</p>';
-  h+=workBlock();
+  h+=heroOrb();
 
   var pending=(d.pool||[]).filter(function(p){return p.from;});
-  var pool=vacRecBtn();
+  var pool='';
   if(pending.length){
     pool+='<div class="carry"><span class="ci">'+IC.up(16)+'</span><span class="ct">Venías con <b>'+pending.length+'</b> de días anteriores. '+
           'Quedaron sin terminar, y hoy vuelven a estar sobre la mesa: decide otra vez si entran en lo esencial, pasan a extra o se van.</span></div>';
@@ -1759,6 +1810,8 @@ function renderAM(){
   }
   slots+='</div>';
   h+=section(topLabel(),'Si solo salen estas, el día ha valido. Lo demás va como extra.',slots);
+
+  h+=workBlock();
 
   h+=metasHoyBlock();
 
@@ -1871,14 +1924,17 @@ function renderPM(){
 }
 
 function renderHoy(){
-  return quoteHtml()+
-     '<div class="hdr2"><div class="hdr-row">'+
-         '<div class="hdate">'+esc(prettyDate())+'</div>'+
-         '<div class="modes">'+
-           '<button class="modebtn'+(S.mode==="am"?' on-am':'')+'" data-action="mode-am">'+IC.sun(15)+' Mañana</button>'+
-           '<button class="modebtn'+(S.mode==="pm"?' on-pm':'')+'" data-action="mode-pm">'+IC.moon(15)+' Cierre</button>'+
-         '</div>'+
-       '</div></div>'+
+  return '<div class="topbar">'+
+      '<div class="tbrand">Briefing</div>'+
+      '<div class="tz">'+
+        '<span class="tdate">'+esc(weekShort()+' · '+shortDate())+'</span>'+
+        '<button class="tgl" data-action="toggle-theme" aria-label="Cambiar tema">'+(appTheme()==="light"?IC.moon(16):IC.sun(16))+'</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="modes2">'+
+       '<button class="modebtn'+(S.mode==="am"?' on-am':'')+'" data-action="mode-am">'+IC.sun(15)+' Mañana</button>'+
+       '<button class="modebtn'+(S.mode==="pm"?' on-pm':'')+'" data-action="mode-pm">'+IC.moon(15)+' Cierre</button>'+
+     '</div>'+
      ((S.mode==="am")?renderAM():renderPM());
 }
 
@@ -2729,18 +2785,71 @@ function _portalResize(){ if(_portalCv&&_portalCv._resize)_portalCv._resize(); }
 window.addEventListener("resize",_portalResize);
 window.addEventListener("orientationchange",function(){ setTimeout(_portalResize,200); });
 
+/* ============ halo de partículas orbitando el orbe (Home) ============ */
+/* las semillas son globales y el tiempo es absoluto (Date.now) para que el
+   halo siga igual cuando la Home se vuelve a pintar, sin saltos ni parpadeos */
+var _haloRAF=null,_haloCv=null,_haloSeeds=null;
+function stopHalo(){ if(_haloRAF){cancelAnimationFrame(_haloRAF);_haloRAF=null;} _haloCv=null; }
+function mountHalo(){
+  var cv=document.querySelector("canvas.halofx");
+  if(!cv){ if(_haloCv)stopHalo(); return; }
+  if(cv===_haloCv)return;
+  stopHalo(); _haloCv=cv; runHalo(cv);
+}
+function runHalo(cv){
+  var ctx=cv.getContext&&cv.getContext("2d"); if(!ctx)return;
+  var dpr=Math.min(window.devicePixelRatio||1,2),sized=false;
+  function measure(){ var w=0,h=0; try{var r=cv.getBoundingClientRect();w=r.width;h=r.height;}catch(e){} if(!w||!h){w=cv.clientWidth||cv.offsetWidth||0;h=cv.clientHeight||cv.offsetHeight||0;} return {w:w,h:h}; }
+  function resize(){ var m=measure(); if(!m.w||!m.h)return false; var W=Math.max(2,Math.round(m.w*dpr)),H=Math.max(2,Math.round(m.h*dpr)); if(cv.width!==W)cv.width=W; if(cv.height!==H)cv.height=H; return true; }
+  cv._resize=function(){ sized=resize(); };
+  if(!_haloSeeds){ _haloSeeds=[]; for(var i=0;i<150;i++){ var band=Math.random(); _haloSeeds.push({a:Math.random()*6.2832,rr:0.52+band*0.46,w:0.10+Math.random()*0.30,s:0.6+Math.random()*2.1,base:0.28+Math.random()*0.6,tw:Math.random()*6.2832,tws:0.6+Math.random()*1.8,dr:Math.random()*0.05}); } }
+  var P=_haloSeeds;
+  var col=(getComputedStyle(document.documentElement).getPropertyValue("--halo")||"").trim()||"110,120,134";
+  function draw(){
+    if(cv!==_haloCv)return;
+    if(!sized){ sized=resize(); if(!sized){ _haloRAF=requestAnimationFrame(draw); return; } }
+    var w=cv.width,h=cv.height,cx=w/2,cy=h/2,dt=Date.now()/1000;
+    ctx.clearRect(0,0,w,h);
+    var R=Math.min(w,h)*0.47,ys=0.96;
+    for(var j=0;j<P.length;j++){ var p=P[j];
+      var ang=p.a+dt*p.w, rad=(p.rr+Math.sin(dt*0.8+p.tw)*p.dr)*R;
+      var x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*ys;
+      var al=p.base*(0.5+0.5*Math.sin(p.tw+dt*p.tws));
+      ctx.beginPath(); ctx.arc(x,y,p.s*dpr,0,6.2832); ctx.fillStyle="rgba("+col+","+al.toFixed(3)+")"; ctx.fill();
+    }
+    _haloRAF=requestAnimationFrame(draw);
+  }
+  _haloRAF=requestAnimationFrame(draw);
+}
+/* orbe + halo: cabecera protagonista de la Home, es el botón de vaciado por voz */
+function heroOrb(){
+  var st=S.rec||"idle", sup=vacSupported();
+  var label=st==="proc"?"Procesando tu voz":(st==="rec"?"Te escucho":"Habla para vaciar");
+  var hint=st==="proc"?"Repartiendo en áreas y tareas…":(st==="rec"?"Suelta todo y pulsa para parar":(sup?"Pulsa y suelta lo que tengas en la cabeza":"Escribe abajo para vaciar"));
+  return '<div class="home-hero">'+
+    '<div class="greet">'+esc(greeting())+'</div>'+
+    '<'+(sup?'button':'div')+' class="stage'+(st==="rec"?" rec":"")+(st==="proc"?" proc":"")+'"'+(sup?' data-action="vac-rec" aria-label="Vaciar por voz"':'')+'>'+
+      '<canvas class="halofx"></canvas>'+
+      '<span class="orb"><span class="ob base"></span><span class="ob b1"></span><span class="ob b2"></span><span class="ob b3"></span><span class="ob b4"></span><span class="ob b5"></span><span class="gloss"></span>'+
+        '<span class="orb-ic">'+(st==="proc"?IC.spin(22):IC.mic(22))+'</span></span>'+
+    '</'+(sup?'button':'div')+'>'+
+    '<div class="hero-state">'+esc(label)+'</div>'+
+    '<div class="hero-hint">'+esc(hint)+'</div>'+
+  '</div>';
+}
+
 function render(){
   if(!S.ready)return;
   var app=document.getElementById("app"), tb=document.getElementById("tabs");
   if(S.intro&&!needsWelcome()){
     app.innerHTML=introHtml();
     tb.innerHTML=""; tb.className="tabs hidden";
-    restoreFocus(); mountPortal(); return;
+    restoreFocus(); mountPortal(); mountHalo(); return;
   }
   if(needsWelcome()){
     app.innerHTML=renderWelcome();
     tb.innerHTML=""; tb.className="tabs hidden";
-    restoreFocus(); mountPortal(); return;
+    restoreFocus(); mountPortal(); mountHalo(); return;
   }
   if(gameOn())checkWorld();
   if(S.tab==="prog"&&!gameOn())S.tab="hoy";
@@ -2755,6 +2864,7 @@ function render(){
   renderTabs();
   restoreFocus();
   mountPortal();
+  mountHalo();
 }
 function needsWelcome(){
   return !(DB.settings&&(DB.settings.name||DB.settings.greeted));
@@ -3053,6 +3163,7 @@ function onClick(e){
   else if(a==="punch-stop")stopPunch();
   else if(a==="add-block")addBlock();
   else if(a==="rm-block")removeBlock(id);
+  else if(a==="toggle-theme"){ toggleTheme(); }
   else if(a==="open-sched"){ S.schedOpen=true; render(); }
   else if(a==="close-sched"){ closeSched(); }
   else if(a==="sched-add"){ schedAddBlock(parseInt(id,10)); }
@@ -3334,6 +3445,8 @@ function boot(){
       if(mig){ DB=mig; toast("Datos anteriores recuperados"); }
     }
     if(DB.settings.weekly===undefined)DB.settings.weekly={};
+    if(DB.settings.theme===undefined)DB.settings.theme="dark";
+    applyTheme();
     day();
     sealStalePunch();
     ensureTodaySchedule();
