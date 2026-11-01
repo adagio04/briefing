@@ -438,7 +438,10 @@
   .stage.rec .orb-ic,.stage.proc .orb-ic{opacity:1}
   .stage.proc .orb-ic svg{animation:spin 1s linear infinite}
   .hero-state{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;margin-top:16px}
+  .hero-state.live{color:var(--text)}
   .hero-hint{font-size:13px;color:var(--muted);margin-top:8px;max-width:280px;line-height:1.45}
+  .hero-stop{width:auto;min-width:210px;margin-top:18px;border-radius:999px}
+  .stage.proc .orb{opacity:.72}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
   .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
@@ -677,6 +680,17 @@ function sendTestPush(){ fetch(PUSH_URL+"/test",{method:"POST"}).then(function(r
 
 /* ============ vaciado mental por voz (audio -> Gemini -> tareas) ============ */
 var mediaRec=null, recChunks=[];
+/* medidor del micrófono: el orbe reacciona al volumen real de tu voz */
+var _micCtx=null,_micAna=null,_micData=null,_micLevel=0;
+function startMicMeter(stream){
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(!AC)return;
+    _micCtx=new AC(); if(_micCtx.state==="suspended"&&_micCtx.resume)_micCtx.resume();
+    var src=_micCtx.createMediaStreamSource(stream);
+    _micAna=_micCtx.createAnalyser(); _micAna.fftSize=256; _micAna.smoothingTimeConstant=0.6;
+    src.connect(_micAna); _micData=new Uint8Array(_micAna.frequencyBinCount);
+  }catch(e){ _micAna=null; }
+}
+function stopMicMeter(){ try{ if(_micCtx&&_micCtx.close)_micCtx.close(); }catch(e){} _micCtx=null; _micAna=null; _micData=null; _micLevel=0; }
 function vacSupported(){ return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder); }
 function startVac(){
   if(!vacSupported()){ toast("Tu navegador no permite grabar audio."); return; }
@@ -684,9 +698,11 @@ function startVac(){
     recChunks=[];
     var mr; try{ mr=new MediaRecorder(stream); }catch(e){ try{ mr=new MediaRecorder(stream,{mimeType:"audio/mp4"}); }catch(e2){ stream.getTracks().forEach(function(t){t.stop();}); toast("No se pudo iniciar la grabación."); return; } }
     mediaRec=mr;
+    startMicMeter(stream);
     mr.ondataavailable=function(ev){ if(ev.data&&ev.data.size) recChunks.push(ev.data); };
     mr.onstop=function(){
       stream.getTracks().forEach(function(t){t.stop();});
+      stopMicMeter();
       var type=(recChunks[0]&&recChunks[0].type)||mr.mimeType||"audio/mp4";
       sendVac(new Blob(recChunks,{type:type}));
     };
@@ -2650,20 +2666,8 @@ function overlayHtml(){
       '<button class="bigbtn am" data-action="bought-ok">Hecho</button></div></div>';
   }
   if(S.schedOpen) return schedModalHtml();
-  if(S.rec==="rec"||S.rec==="proc"){
-    if(S.rec==="proc")
-      return '<div class="ovl recovl"><div class="ovlcard reccard">'+
-        '<div class="rec-orb proc"><canvas class="portalfx" data-portal="orb"></canvas><span class="rec-aura"></span><span class="rec-core"></span>'+IC.spin(30)+'</div>'+
-        '<h3>Procesando tu voz…</h3>'+
-        '<p>Estoy repartiendo lo que has dicho en áreas y tareas. Un momento.</p>'+
-        '</div></div>';
-    return '<div class="ovl recovl"><div class="ovlcard reccard">'+
-      '<div class="rec-orb"><canvas class="portalfx" data-portal="orb"></canvas><span class="rec-aura"></span><span class="rec-core"></span>'+IC.mic(30)+'</div>'+
-      '<h3>Te escucho</h3>'+
-      '<p>Suelta todo lo que tengas en la cabeza. Cuando acabes, para y lo convierto en tareas.</p>'+
-      '<button class="bigbtn rec" data-action="vac-rec" style="margin-top:20px">'+IC.stop(16)+' Parar y procesar</button>'+
-      '</div></div>';
-  }
+  /* la grabación ya no abre pantalla aparte: es el propio orbe Siri de la Home
+     el que reacciona escuchándote (ver heroOrb / drawOrb) */
   return '';
 }
 
@@ -2804,11 +2808,14 @@ function drawOrb(octx,ocv,dt,dpr){
   if(light){ bg.addColorStop(0,"#eef2fb"); bg.addColorStop(0.72,"#e2e8f6"); bg.addColorStop(1,"#d2dbee"); }
   else{ bg.addColorStop(0,"#161c38"); bg.addColorStop(0.72,"#0b0f20"); bg.addColorStop(1,"#060914"); }
   octx.fillStyle=bg; octx.fillRect(0,0,w,h);
+  // reacción a la voz: cuando escucha, el orbe respira y brilla con el volumen
+  var rec=(typeof S!=="undefined"&&S.rec==="rec"), lvl=rec?Math.min(1,_micLevel*2.4):0;
+  var spin=1+lvl*0.9;  // gira un poco más rápido al hablar
   // pétalos (flor de color que gira)
   octx.globalCompositeOperation=light?"source-over":"lighter";
-  var br=1+Math.sin(dt*0.8)*0.05, a0=light?0.5:0.78, a1=light?0.2:0.28;
+  var br=1+Math.sin(dt*0.8)*0.05+lvl*0.55, a0=(light?0.5:0.78)+lvl*0.18, a1=(light?0.2:0.28)+lvl*0.1;
   for(var i=0;i<ORB_PETALS.length;i++){ var b=ORB_PETALS[i];
-    var ang=b.base+dt*b.sp+Math.sin(dt*0.45+b.base)*0.14;
+    var ang=b.base+dt*b.sp*spin+Math.sin(dt*0.45+b.base)*0.14;
     octx.save(); octx.translate(cx,cy); octx.rotate(ang); octx.scale(b.rad*br,b.wid);
     var off=R*b.off, rad=R*0.9;
     var g=octx.createRadialGradient(off,0,0,off,0,rad);
@@ -2818,12 +2825,13 @@ function drawOrb(octx,ocv,dt,dpr){
     octx.fillStyle=g; octx.beginPath(); octx.arc(off,0,rad,0,6.2832); octx.fill();
     octx.restore();
   }
-  // núcleo blanco
-  var core=octx.createRadialGradient(cx,cy,0,cx,cy,R*0.34);
+  // núcleo blanco (crece y brilla con la voz)
+  var cr=R*(0.34+lvl*0.22);
+  var core=octx.createRadialGradient(cx,cy,0,cx,cy,cr);
   core.addColorStop(0,light?"rgba(255,255,255,.9)":"rgba(245,251,255,.95)");
-  core.addColorStop(0.45,light?"rgba(220,235,255,.3)":"rgba(170,210,255,.35)");
+  core.addColorStop(0.45,light?"rgba(220,235,255,"+(0.3+lvl*0.3).toFixed(2)+")":"rgba(170,210,255,"+(0.35+lvl*0.3).toFixed(2)+")");
   core.addColorStop(1,"rgba(255,255,255,0)");
-  octx.fillStyle=core; octx.beginPath(); octx.arc(cx,cy,R*0.34,0,6.2832); octx.fill();
+  octx.fillStyle=core; octx.beginPath(); octx.arc(cx,cy,cr,0,6.2832); octx.fill();
   octx.globalCompositeOperation="source-over";
   // borde de cristal
   var rim=octx.createRadialGradient(cx,cy,R*0.78,cx,cy,R);
@@ -2851,12 +2859,16 @@ function runHalo(cv){
     var w=cv.width,h=cv.height,cx=w/2,cy=h/2,dt=(Date.now()-_animT0)/1000;
     ctx.clearRect(0,0,w,h);
     var R=Math.min(w,h)*0.47,ys=0.96;
+    /* nivel del micrófono (suavizado) para que todo reaccione a la voz */
+    if(_micAna&&_micData){ try{ _micAna.getByteFrequencyData(_micData); var ss=0,nn=_micData.length; for(var mi=0;mi<nn;mi++)ss+=_micData[mi]; var avg=(ss/nn)/255; _micLevel+=(avg-_micLevel)*0.25; }catch(e){} }
+    else { _micLevel+=(0-_micLevel)*0.12; }
+    var rec=(typeof S!=="undefined"&&S.rec==="rec"), lvl=rec?Math.min(1,_micLevel*2.4):0;
     /* resplandor circular del orbe (sustituye a la box-shadow, que creaba un
        cuadrado por el overflow:hidden + canvas) */
     var light=document.documentElement.getAttribute("data-theme")==="light";
     var gc=light?"120,140,210":"120,150,255";
-    var glow=ctx.createRadialGradient(cx,cy,R*0.22,cx,cy,R*0.92);
-    glow.addColorStop(0,"rgba("+gc+","+(light?0.16:0.20)+")");
+    var glow=ctx.createRadialGradient(cx,cy,R*0.22,cx,cy,R*(0.92+lvl*0.25));
+    glow.addColorStop(0,"rgba("+gc+","+((light?0.16:0.20)+lvl*0.22).toFixed(3)+")");
     glow.addColorStop(1,"rgba("+gc+",0)");
     ctx.fillStyle=glow; ctx.fillRect(0,0,w,h);
     for(var j=0;j<P.length;j++){ var p=P[j];
@@ -2874,17 +2886,20 @@ function runHalo(cv){
 function heroOrb(){
   var st=S.rec||"idle", sup=vacSupported();
   var label=st==="proc"?"Procesando tu voz":(st==="rec"?"Te escucho":"Habla para vaciar");
-  var hint=st==="proc"?"Repartiendo en áreas y tareas…":(st==="rec"?"Suelta todo y pulsa para parar":(sup?"Pulsa y suelta lo que tengas en la cabeza":"Escribe abajo para vaciar"));
-  return '<div class="home-hero">'+
+  var hint=st==="proc"?"Repartiendo en áreas y tareas…":(st==="rec"?"Te estoy escuchando — pulsa para terminar":(sup?"Pulsa y suelta lo que tengas en la cabeza":"Escribe abajo para vaciar"));
+  var tag=(sup&&st!=="proc")?"button":"div";
+  var attrs=(sup&&st!=="proc")?' data-action="vac-rec" aria-label="Vaciar por voz"':'';
+  var h='<div class="home-hero">'+
     '<div class="greet">'+esc(greeting())+'</div>'+
-    '<'+(sup?'button':'div')+' class="stage'+(st==="rec"?" rec":"")+(st==="proc"?" proc":"")+'"'+(sup?' data-action="vac-rec" aria-label="Vaciar por voz"':'')+'>'+
+    '<'+tag+' class="stage'+(st==="rec"?" rec":"")+(st==="proc"?" proc":"")+'"'+attrs+'>'+
       '<canvas class="halofx"></canvas>'+
-      '<span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span>'+
-        '<span class="orb-ic">'+(st==="proc"?IC.spin(22):IC.mic(22))+'</span></span>'+
-    '</'+(sup?'button':'div')+'>'+
-    '<div class="hero-state">'+esc(label)+'</div>'+
-    '<div class="hero-hint">'+esc(hint)+'</div>'+
-  '</div>';
+      '<span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span></span>'+
+    '</'+tag+'>'+
+    '<div class="hero-state'+(st==="rec"?" live":"")+'">'+esc(label)+'</div>'+
+    '<div class="hero-hint">'+esc(hint)+'</div>';
+  if(st==="rec") h+='<button class="bigbtn rec hero-stop" data-action="vac-rec">'+IC.stop(16)+' Parar y procesar</button>';
+  h+='</div>';
+  return h;
 }
 
 function render(){
