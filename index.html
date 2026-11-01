@@ -381,7 +381,8 @@
   @keyframes slpulse{0%{opacity:0;transform:scale(.65)}22%{opacity:.85}100%{opacity:0;transform:scale(1.1)}}
   @keyframes slcore{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.28);opacity:.7}}
   .splash-name{font-family:var(--mono);font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
-  .splashscreen h1{font-size:29px;margin-bottom:0}
+  .splash-stage{margin:0 auto 4px;cursor:pointer}
+  .splashscreen h1{font-size:29px;margin-bottom:0;margin-top:4px}
   .splashscreen .splash-tap{margin-top:34px}
   /* ---- overlay de grabación por voz (pantalla propia, sin ver lo de detrás) ---- */
   .ovl.recovl{z-index:130;background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -3133,8 +3134,8 @@ function dayToRecover(){
 function introHtml(){
   if(S.intro&&S.intro.stage==="rec")return recoverHtml(S.intro.k);
   if(S.intro&&S.intro.stage==="splash")
-    return '<div class="intro-s splashscreen" data-action="splash-go"><canvas class="portalfx" data-portal="splash"></canvas><div class="intro-in splash">'+
-      '<div class="splash-logo"><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-ring"></span><span class="sl-core"></span></div>'+
+    return '<div class="intro-s splashscreen" data-action="splash-go"><div class="intro-in splash">'+
+      '<div class="stage splash-stage"><canvas class="halofx"></canvas><span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span></span></div>'+
       '<div class="splash-name fadeup d2">Briefing</div>'+
       '<h1 class="fadeup d3">'+esc(greeting())+'</h1>'+
       '<div class="splash-tap fadeup d4">Toca para entrar</div>'+
