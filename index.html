@@ -430,15 +430,12 @@
   .home-hero .greet{font-size:22px;font-weight:300;letter-spacing:.2px;color:var(--text);margin-bottom:16px}
   .stage{position:relative;width:300px;max-width:82vw;aspect-ratio:1/1;display:grid;place-items:center;background:none;border:none;padding:0;cursor:pointer}
   .stage canvas.halofx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
-  .orb{position:relative;width:46%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;z-index:2;display:grid;place-items:center;transition:transform .18s ease;
-    box-shadow:0 0 60px -4px rgba(120,150,255,.55), inset 0 2px 12px rgba(255,255,255,.35)}
-  :root[data-theme="light"] .orb{box-shadow:0 18px 52px -12px rgba(90,110,180,.55), inset 0 2px 12px rgba(255,255,255,.8)}
+  .orb{position:relative;width:51%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;z-index:2;display:grid;place-items:center;transition:transform .18s ease}
   .orb .orbfx{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;z-index:1}
-  .orb .gloss{position:absolute;inset:0;border-radius:50%;z-index:3;pointer-events:none;background:radial-gradient(52% 40% at 37% 25%, rgba(255,255,255,.85), rgba(255,255,255,0) 58%)}
+  .orb .gloss{position:absolute;inset:0;border-radius:50%;z-index:3;pointer-events:none;background:radial-gradient(34% 26% at 35% 22%, rgba(255,255,255,.4), rgba(255,255,255,0) 60%)}
   .orb .orb-ic{position:relative;z-index:4;color:#fff;opacity:0;transition:opacity .2s;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
   .stage:active .orb{transform:scale(.96)}
   .stage.rec .orb-ic,.stage.proc .orb-ic{opacity:1}
-  .stage.rec .orb{box-shadow:0 0 78px 0 rgba(120,150,255,.75)}
   .stage.proc .orb-ic svg{animation:spin 1s linear infinite}
   .hero-state{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;margin-top:16px}
   .hero-hint{font-size:13px;color:var(--muted);margin-top:8px;max-width:280px;line-height:1.45}
@@ -2778,6 +2775,10 @@ window.addEventListener("orientationchange",function(){ setTimeout(_portalResize
 /* las semillas son globales y el tiempo es absoluto (Date.now) para que el
    halo siga igual cuando la Home se vuelve a pintar, sin saltos ni parpadeos */
 var _haloRAF=null,_haloCv=null,_haloSeeds=null;
+/* base de tiempo relativa al arranque: pequeña (segundos) para que sin/cos y
+   rotate() no pierdan precisión, pero absoluta respecto a Date.now para seguir
+   siendo continua aunque la Home se repinte */
+var _animT0=Date.now();
 function stopHalo(){ if(_haloRAF){cancelAnimationFrame(_haloRAF);_haloRAF=null;} _haloCv=null; }
 function mountHalo(){
   var cv=document.querySelector("canvas.halofx");
@@ -2785,40 +2786,51 @@ function mountHalo(){
   if(cv===_haloCv)return;
   stopHalo(); _haloCv=cv; runHalo(cv);
 }
-/* blobs de color del orbe (estilo Siri): centros en movimiento CONTINUO con
-   frecuencias incomensurables -> nunca "reinicia" */
-var ORB_BLOBS=[
-  {c:[41,211,255], ph:0.0, orb:0.30, sp:0.21, sz:0.82},
-  {c:[47,123,255], ph:2.1, orb:0.30, sp:0.16, sz:0.86},
-  {c:[155,92,255], ph:4.0, orb:0.34, sp:0.19, sz:0.80},
-  {c:[255,92,203], ph:5.3, orb:0.27, sp:0.14, sz:0.70},
-  {c:[43,240,198], ph:1.0, orb:0.24, sp:0.25, sz:0.66}
-];
+/* pétalos de color del orbe (estilo Siri): aspas que giran como una flor y
+   convergen en un núcleo blanco; frecuencias distintas -> swirl continuo */
+var ORB_PETALS=(function(){
+  var cols=[[255,70,150],[120,90,255],[40,150,255],[40,230,200],[90,230,120],[255,150,70]],a=[],i;
+  for(i=0;i<6;i++) a.push({c:cols[i], base:i*(6.2832/6), sp:0.30, off:0.40, rad:0.62, wid:0.50});
+  return a;
+})();
 function drawOrb(octx,ocv,dt,dpr){
   var w=ocv.width,h=ocv.height,cx=w/2,cy=h/2,R=Math.min(w,h)/2;
   var light=document.documentElement.getAttribute("data-theme")==="light";
   octx.clearRect(0,0,w,h);
   octx.save();
-  octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.clip();   // recorta al círculo
-  // base esfera
-  var bg=octx.createRadialGradient(cx-R*0.18,cy-R*0.22,R*0.1,cx,cy,R*1.05);
-  if(light){ bg.addColorStop(0,"#ffffff"); bg.addColorStop(1,"#dde6f6"); }
-  else{ bg.addColorStop(0,"#3a4472"); bg.addColorStop(1,"#121529"); }
+  octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.clip();
+  // base de cristal
+  var bg=octx.createRadialGradient(cx-R*0.18,cy-R*0.24,R*0.05,cx,cy,R*1.02);
+  if(light){ bg.addColorStop(0,"#eef2fb"); bg.addColorStop(0.72,"#e2e8f6"); bg.addColorStop(1,"#d2dbee"); }
+  else{ bg.addColorStop(0,"#161c38"); bg.addColorStop(0.72,"#0b0f20"); bg.addColorStop(1,"#060914"); }
   octx.fillStyle=bg; octx.fillRect(0,0,w,h);
-  // blobs de color fluyendo
+  // pétalos (flor de color que gira)
   octx.globalCompositeOperation=light?"source-over":"lighter";
-  for(var i=0;i<ORB_BLOBS.length;i++){ var b=ORB_BLOBS[i];
-    var ang=b.ph+dt*b.sp;
-    var bx=cx+Math.cos(ang)*R*b.orb + Math.cos(dt*0.13+b.ph*1.7)*R*0.10;
-    var by=cy+Math.sin(ang)*R*b.orb + Math.sin(dt*0.11+b.ph*1.3)*R*0.10;
-    var rad=R*b.sz;
-    var g=octx.createRadialGradient(bx,by,0,bx,by,rad);
-    var a=light?0.55:0.60;
-    g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a+")");
+  var br=1+Math.sin(dt*0.8)*0.05, a0=light?0.5:0.78, a1=light?0.2:0.28;
+  for(var i=0;i<ORB_PETALS.length;i++){ var b=ORB_PETALS[i];
+    var ang=b.base+dt*b.sp+Math.sin(dt*0.45+b.base)*0.14;
+    octx.save(); octx.translate(cx,cy); octx.rotate(ang); octx.scale(b.rad*br,b.wid);
+    var off=R*b.off, rad=R*0.9;
+    var g=octx.createRadialGradient(off,0,0,off,0,rad);
+    g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a0+")");
+    g.addColorStop(0.45,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a1+")");
     g.addColorStop(1,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+",0)");
-    octx.fillStyle=g; octx.beginPath(); octx.arc(bx,by,rad,0,6.2832); octx.fill();
+    octx.fillStyle=g; octx.beginPath(); octx.arc(off,0,rad,0,6.2832); octx.fill();
+    octx.restore();
   }
+  // núcleo blanco
+  var core=octx.createRadialGradient(cx,cy,0,cx,cy,R*0.34);
+  core.addColorStop(0,light?"rgba(255,255,255,.9)":"rgba(245,251,255,.95)");
+  core.addColorStop(0.45,light?"rgba(220,235,255,.3)":"rgba(170,210,255,.35)");
+  core.addColorStop(1,"rgba(255,255,255,0)");
+  octx.fillStyle=core; octx.beginPath(); octx.arc(cx,cy,R*0.34,0,6.2832); octx.fill();
   octx.globalCompositeOperation="source-over";
+  // borde de cristal
+  var rim=octx.createRadialGradient(cx,cy,R*0.78,cx,cy,R);
+  rim.addColorStop(0,"rgba(255,255,255,0)");
+  rim.addColorStop(0.86,light?"rgba(120,140,190,0.06)":"rgba(180,205,255,0.08)");
+  rim.addColorStop(1,light?"rgba(120,140,190,0.3)":"rgba(210,230,255,0.32)");
+  octx.fillStyle=rim; octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.fill();
   octx.restore();
 }
 function runHalo(cv){
@@ -2836,9 +2848,17 @@ function runHalo(cv){
   function draw(){
     if(cv!==_haloCv)return;
     if(!sized){ sized=resize(); if(!sized){ _haloRAF=requestAnimationFrame(draw); return; } }
-    var w=cv.width,h=cv.height,cx=w/2,cy=h/2,dt=Date.now()/1000;
+    var w=cv.width,h=cv.height,cx=w/2,cy=h/2,dt=(Date.now()-_animT0)/1000;
     ctx.clearRect(0,0,w,h);
     var R=Math.min(w,h)*0.47,ys=0.96;
+    /* resplandor circular del orbe (sustituye a la box-shadow, que creaba un
+       cuadrado por el overflow:hidden + canvas) */
+    var light=document.documentElement.getAttribute("data-theme")==="light";
+    var gc=light?"120,140,210":"120,150,255";
+    var glow=ctx.createRadialGradient(cx,cy,R*0.22,cx,cy,R*0.92);
+    glow.addColorStop(0,"rgba("+gc+","+(light?0.16:0.20)+")");
+    glow.addColorStop(1,"rgba("+gc+",0)");
+    ctx.fillStyle=glow; ctx.fillRect(0,0,w,h);
     for(var j=0;j<P.length;j++){ var p=P[j];
       var ang=p.a+dt*p.w, rad=(p.rr+Math.sin(dt*0.8+p.tw)*p.dr)*R;
       var x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*ys;
