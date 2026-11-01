@@ -390,6 +390,23 @@
   .rec-orb .portalfx{width:100%;height:100%}
   .splashscreen .portalfx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
   .splashscreen .intro-in{position:relative;z-index:1}
+  /* ---- modal horario semanal ---- */
+  .schedovl{z-index:135}
+  .schedcard{text-align:left;max-width:380px;max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px}
+  .sched-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px}
+  .sched-h{font-size:19px;font-weight:700;color:var(--text)}
+  .schedx{background:transparent;border:none;color:var(--faint);cursor:pointer;padding:4px;display:grid;place-items:center;flex-shrink:0}
+  .sched-sub{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 16px}
+  .sched-days{display:flex;flex-direction:column;gap:12px}
+  .sched-day{border:1px solid var(--border);border-radius:12px;padding:11px 12px;background:var(--surface2)}
+  .sched-dh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  .sched-dn{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:1px}
+  .sched-tools{display:flex;gap:6px;flex-shrink:0}
+  .sched-copy{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:4px 8px;font-size:11px;font-weight:600;font-family:inherit;display:inline-grid;place-items:center}
+  .sched-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .sched-chips .ps.blk{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface);border-radius:6px;padding:3px 7px}
+  .sched-free{font-size:12px;color:var(--faint);margin-bottom:9px}
+  .schedcard .blkadd{margin-top:0}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
   .voicebtn{position:relative;display:block;width:100%;background:transparent;border:1px solid var(--border);padding:0;cursor:pointer;margin-bottom:12px;border-radius:15px;font-family:inherit;overflow:hidden}
   .voicebtn .vb-aura{display:none;position:absolute;inset:-60%;background:conic-gradient(from 0deg,var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber),var(--clay),rgba(227,154,59,.1),var(--amber));animation:none}
@@ -727,8 +744,10 @@ var DB=emptyDB();
 
 function newDay(k){
   var s=DB.settings||{};
+  var tpl=(s.weekly&&s.weekly[(dateOfKey(k).getDay()+6)%7]);
+  var bl=Array.isArray(tpl)?tpl.map(function(b){return {id:uid(),s:b.s,e:b.e};}):[];
   return {date:k,pool:[],top3:[],workStart:s.workStart||"09:30",workEnd:s.workEnd||"19:00",
-          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0,punch:{open:0,sessions:[]},blocks:[]};
+          doneTop:{},doneDaily:{},extras:[],closed:false,u:0,arr:0,punch:{open:0,sessions:[]},blocks:bl,schedApplied:true};
 }
 function day(k){
   k=k||todayKey();
@@ -865,6 +884,38 @@ function mergeBlocks(aBase,aOther,gone){
   out.sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);});
   return out;
 }
+
+/* ============ horario semanal (plantilla por día de la semana) ============ */
+var WEEKDAYS=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+var schedDrafts={};
+function weekdayIdx(k){ return (dateOfKey(k).getDay()+6)%7; } /* 0=Lun .. 6=Dom */
+function weeklyMap(){ if(!DB.settings)DB.settings={}; if(!DB.settings.weekly||typeof DB.settings.weekly!=="object")DB.settings.weekly={}; return DB.settings.weekly; }
+function weeklyFor(wd){ var w=weeklyMap()[wd]; return Array.isArray(w)?w:[]; }
+function weeklyBlocksForKey(k){ return weeklyFor(weekdayIdx(k)).map(function(b){return {id:uid(),s:b.s,e:b.e};}); }
+/* rellena un día con la plantilla de su día de la semana; force ignora el flag y
+   el que ya tenga bloques, para re-aplicar cuando el usuario edita el horario */
+function applyWeeklyToDay(d,k,force){
+  if(!d)return false;
+  if(!force){ if(d.schedApplied)return false; if(d.blocks&&d.blocks.length){d.schedApplied=true;return false;} }
+  if(force&&d.blocks&&d.blocks.length)return false;
+  var tpl=weeklyBlocksForKey(k); d.schedApplied=true;
+  if(tpl.length){ d.blocks=tpl; return true; }
+  return false;
+}
+function ensureTodaySchedule(){ var k=todayKey(),d=DB.days[k]; if(!d||d.schedApplied)return; if(applyWeeklyToDay(d,k,false)){ d.arr=now(); d.u=now(); } }
+function schedAddBlock(wd){
+  var sEl=document.getElementById("schedS_"+wd),eEl=document.getElementById("schedE_"+wd);
+  var s=sEl?sEl.value:"",e=eEl?eEl.value:"";
+  if(!s||!e){toast("Pon hora de inicio y de fin.");return;}
+  if(hmToMin(e)<=hmToMin(s)){toast("La hora de fin debe ser mayor que la de inicio.");return;}
+  var wk=weeklyMap(); wk[wd]=wk[wd]||[]; wk[wd].push({s:s,e:e});
+  wk[wd].sort(function(a,b){return hmToMin(a.s)-hmToMin(b.s);});
+  schedDrafts[wd]={}; DB.u=now(); save(); render();
+}
+function schedRmBlock(wd,i){ var wk=weeklyMap(); if(wk[wd]&&wk[wd][i]){ wk[wd].splice(i,1); if(!wk[wd].length)delete wk[wd]; DB.u=now(); save(); render(); } }
+function schedCopyAll(wd){ var src=weeklyFor(wd),wk=weeklyMap(),j; for(j=0;j<7;j++){ wk[j]=src.map(function(b){return {s:b.s,e:b.e};}); if(!wk[j].length)delete wk[j]; } DB.u=now(); save(); render(); toast("Horario copiado a toda la semana"); }
+function schedCopyWeekdays(wd){ var src=weeklyFor(wd),wk=weeklyMap(),j; for(j=0;j<5;j++){ wk[j]=src.map(function(b){return {s:b.s,e:b.e};}); if(!wk[j].length)delete wk[j]; } DB.u=now(); save(); render(); toast("Copiado a lunes–viernes"); }
+function closeSched(){ S.schedOpen=false; var k=todayKey(),d=day(); if(!(d.blocks&&d.blocks.length)){ applyWeeklyToDay(d,k,true); d.arr=now(); } touchDay(); save(); render(); }
 
 /* ============ ¿salió todo lo que había marcado? ============ */
 function dayComplete(d){
@@ -1615,7 +1666,7 @@ function workBlock(){
      (onX?' · en marcha desde '+hhmm(p.open):(ex>0?' · '+fmtHm(ex):''))+'</span>'+
      '<button class="minibtn'+(onX?' teal':'')+'" data-action="'+(onX?"punch-stop":"punch-start")+'">'+(onX?"Parar":"Empezar")+'</button></div>';
   h+='</div>';
-  return section("Trabajo","",h);
+  return section("Trabajo","",h,'<button class="minibtn ghost" data-action="open-sched">'+IC.cal(14)+' Horario</button>');
 }
 
 /* ============ piezas comunes ============ */
@@ -2556,6 +2607,7 @@ function overlayHtml(){
       '<p class="wup-n">Ahora ve y gástatelo de verdad. Eso era el trato.</p>'+
       '<button class="bigbtn am" data-action="bought-ok">Hecho</button></div></div>';
   }
+  if(S.schedOpen) return schedModalHtml();
   if(S.rec==="rec"||S.rec==="proc"){
     if(S.rec==="proc")
       return '<div class="ovl recovl"><div class="ovlcard reccard">'+
@@ -2571,6 +2623,42 @@ function overlayHtml(){
       '</div></div>';
   }
   return '';
+}
+
+function schedModalHtml(){
+  var h='<div class="ovl schedovl"><div class="ovlcard schedcard">'+
+    '<div class="sched-top"><div class="sched-h">Horario semanal</div>'+
+      '<button class="schedx" data-action="close-sched" title="Cerrar">'+IC.x(18)+'</button></div>'+
+    '<p class="sched-sub">Define tus bloques de cada día. Los días nuevos se rellenan solos con este horario, y siempre puedes retocar el día suelto en «Trabajo».</p>'+
+    '<div class="sched-days">';
+  for(var wd=0;wd<7;wd++){
+    var list=weeklyFor(wd),dr=schedDrafts[wd]||{};
+    h+='<div class="sched-day">'+
+      '<div class="sched-dh"><span class="sched-dn">'+WEEKDAYS[wd]+'</span>'+
+        (list.length?'<span class="sched-tools">'+
+          '<button class="sched-copy" data-action="sched-copy5" data-id="'+wd+'" title="Copiar a lunes–viernes">L–V</button>'+
+          '<button class="sched-copy" data-action="sched-copyall" data-id="'+wd+'" title="Copiar a toda la semana">'+IC.copy(13)+'</button>'+
+        '</span>':'')+
+      '</div>';
+    if(list.length){
+      h+='<div class="sched-chips">';
+      list.forEach(function(b,i){
+        h+='<span class="ps blk">'+esc(b.s)+'–'+esc(b.e)+'<button class="blkx" data-action="sched-rm" data-id="'+wd+':'+i+'" title="Quitar">'+IC.x(12)+'</button></span>';
+      });
+      h+='</div>';
+    }else{
+      h+='<div class="sched-free">Libre</div>';
+    }
+    h+='<div class="blkadd">'+
+      '<label class="tfield"><span>De</span><input type="time" id="schedS_'+wd+'" value="'+esc(dr.s||"09:30")+'"/></label>'+
+      '<label class="tfield"><span>A</span><input type="time" id="schedE_'+wd+'" value="'+esc(dr.e||"14:00")+'"/></label>'+
+      '<button class="iconbtn" data-action="sched-add" data-id="'+wd+'" title="Añadir bloque">'+IC.plus(18)+'</button></div>'+
+      '</div>';
+  }
+  h+='</div>'+
+    '<button class="bigbtn am" data-action="close-sched" style="margin-top:6px">Hecho</button>'+
+    '</div></div>';
+  return h;
 }
 
 /* ============ portal de partículas (splash + orbe de voz) ============ */
@@ -2965,6 +3053,12 @@ function onClick(e){
   else if(a==="punch-stop")stopPunch();
   else if(a==="add-block")addBlock();
   else if(a==="rm-block")removeBlock(id);
+  else if(a==="open-sched"){ S.schedOpen=true; render(); }
+  else if(a==="close-sched"){ closeSched(); }
+  else if(a==="sched-add"){ schedAddBlock(parseInt(id,10)); }
+  else if(a==="sched-rm"){ var _p=String(id).split(":"); schedRmBlock(+_p[0],+_p[1]); }
+  else if(a==="sched-copyall"){ schedCopyAll(parseInt(id,10)); }
+  else if(a==="sched-copy5"){ schedCopyWeekdays(parseInt(id,10)); }
   else if(a==="vac-rec"){ if((S.rec||"idle")==="rec")stopVac(); else if((S.rec||"idle")!=="proc")startVac(); }
   else if(a==="toggle-push"){ if(pushFlag())disablePush(); else enablePush(); }
   else if(a==="push-test")sendTestPush();
@@ -3125,6 +3219,8 @@ function onInput(e){
   else if(i==="metaCur")metaCur=t.value;
   else if(i==="blkS")blkDraftS=t.value;
   else if(i==="blkE")blkDraftE=t.value;
+  else if(i.indexOf("schedS_")===0){ var _w=i.slice(7); schedDrafts[_w]=schedDrafts[_w]||{}; schedDrafts[_w].s=t.value; }
+  else if(i.indexOf("schedE_")===0){ var _w2=i.slice(7); schedDrafts[_w2]=schedDrafts[_w2]||{}; schedDrafts[_w2].e=t.value; }
   else if(i==="tokinp"){ setToken(t.value.trim()); paintSyncDot(); }
   else if(i==="gidinp"){ DB.sync.gistId=t.value.trim(); sSet(KDB,DB); }
   else if(t.getAttribute&&t.getAttribute("data-mdl")){ setMetaDeadline(t.getAttribute("data-mdl"),t.value); }
@@ -3157,6 +3253,8 @@ function onChange(e){
   else if(i==="metaDeadline"){ metaDeadline=e.target.value; }
   else if(i==="blkS"){ blkDraftS=e.target.value; }
   else if(i==="blkE"){ blkDraftE=e.target.value; }
+  else if(i.indexOf("schedS_")===0){ var _sw=i.slice(7); schedDrafts[_sw]=schedDrafts[_sw]||{}; schedDrafts[_sw].s=e.target.value; }
+  else if(i.indexOf("schedE_")===0){ var _sw2=i.slice(7); schedDrafts[_sw2]=schedDrafts[_sw2]||{}; schedDrafts[_sw2].e=e.target.value; }
   else if(e.target.getAttribute&&e.target.getAttribute("data-mdl")){ setMetaDeadline(e.target.getAttribute("data-mdl"),e.target.value); }
 }
 document.addEventListener("click",onClick);
@@ -3235,8 +3333,10 @@ function boot(){
       var mig=migrateV1();
       if(mig){ DB=mig; toast("Datos anteriores recuperados"); }
     }
+    if(DB.settings.weekly===undefined)DB.settings.weekly={};
     day();
     sealStalePunch();
+    ensureTodaySchedule();
     var _rk=dayToRecover();
     if(!needsWelcome()){
       if(!introDone()) S.intro={stage:"hello",k:_rk};          /* primer arranque del día: recibe + arrastra lo de ayer */
@@ -3276,6 +3376,7 @@ setInterval(function(){
     bootDay=todayKey();
     sealStalePunch();
     day();
+    ensureTodaySchedule();
     if(!introDone()&&!needsWelcome()){ S.intro={stage:"hello",k:dayToRecover()}; }
     else { harvestCarry(); applyCarry(); }
     save({nosync:true});
