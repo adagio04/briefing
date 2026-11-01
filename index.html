@@ -1899,18 +1899,17 @@ function closedSummary(d){
 }
 function renderHoy(){
   var d=day();
-  var top='<div class="topbar"><div class="tbrand">Briefing</div>'+
-      '<div class="tz"><span class="tdate">'+esc(weekShort()+' · '+shortDate())+'</span>'+
-        '<button class="tgl" data-action="toggle-theme" aria-label="Cambiar tema">'+(appTheme()==="light"?IC.moon(16):IC.sun(16))+'</button></div></div>';
+  var top='<div class="topbar"><span class="tdate">'+esc(weekShort()+' · '+shortDate())+'</span>'+
+        '<button class="tgl" data-action="toggle-theme" aria-label="Cambiar tema">'+(appTheme()==="light"?IC.moon(16):IC.sun(16))+'</button></div>';
   if(d.closed) return top+closedSummary(d);
   /* el vaciado se abre solo cuando no hay nada capturado; con tareas ya hechas,
      se queda plegado y mandan los paneles de esenciales/extras */
   if(typeof S.acc.homeVaciado==="undefined") S.acc.homeVaciado=!(d.pool&&d.pool.length);
   var h=top+heroOrb();
-  h+=vaciadoBlock(d);
   h+=las3Block(d);
   h+=extrasBlock(d);
   h+=diariasBlock(d);
+  h+=vaciadoBlock(d);
   h+=workBlock();
   h+=metasHoyBlock();
   if(notebookOn()){
@@ -3121,7 +3120,6 @@ function introHtml(){
   if(S.intro&&S.intro.stage==="splash")
     return '<div class="intro-s splashscreen" data-action="splash-go"><div class="intro-in splash">'+
       '<div class="stage splash-stage"><canvas class="halofx"></canvas><span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span></span></div>'+
-      '<div class="splash-name fadeup d2">Briefing</div>'+
       '<h1 class="fadeup d3">'+esc(greeting())+'</h1>'+
       '<div class="splash-tap fadeup d4">Toca para entrar</div>'+
       '</div></div>';
