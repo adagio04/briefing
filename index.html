@@ -431,26 +431,15 @@
   .stage{position:relative;width:300px;max-width:82vw;aspect-ratio:1/1;display:grid;place-items:center;background:none;border:none;padding:0;cursor:pointer}
   .stage canvas.halofx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
   .orb{position:relative;width:46%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;z-index:2;display:grid;place-items:center;transition:transform .18s ease;
-    box-shadow:0 0 54px -6px rgba(120,150,255,.5), inset 0 2px 12px rgba(255,255,255,.35)}
-  :root[data-theme="light"] .orb{box-shadow:0 18px 50px -14px rgba(90,110,180,.5), inset 0 2px 12px rgba(255,255,255,.75)}
-  .orb .ob{position:absolute;border-radius:50%}
-  .orb .base{inset:0;background:radial-gradient(circle at 50% 42%, #2a3350 0%, #161b2e 70%)}
-  :root[data-theme="light"] .orb .base{background:radial-gradient(circle at 50% 42%, #ffffff 0%, #eef2fb 45%, #e4e9f6 78%)}
-  .orb .b1,.orb .b2,.orb .b3,.orb .b4,.orb .b5{filter:blur(13px);opacity:.95}
-  .orb .b1{width:80%;height:80%;left:-8%;top:4%;background:radial-gradient(circle,#2f7bff,#2f7bff00 70%);animation:haloM1 5.5s ease-in-out infinite}
-  .orb .b2{width:80%;height:80%;right:-14%;top:-6%;background:radial-gradient(circle,#9b5cff,#9b5cff00 70%);animation:haloM2 6.5s ease-in-out infinite}
-  .orb .b3{width:80%;height:80%;left:4%;bottom:-16%;background:radial-gradient(circle,#19d3ff,#19d3ff00 70%);animation:haloM3 6s ease-in-out infinite}
-  .orb .b4{width:66%;height:66%;right:0;bottom:-4%;background:radial-gradient(circle,#ff5ccb,#ff5ccb00 70%);animation:haloM1 4.8s ease-in-out infinite reverse}
-  .orb .b5{width:56%;height:56%;left:18%;top:18%;background:radial-gradient(circle,#2bf0c6,#2bf0c600 70%);animation:haloM2 5.2s ease-in-out infinite reverse}
-  .orb .gloss{position:absolute;inset:0;border-radius:50%;z-index:3;background:radial-gradient(55% 42% at 38% 26%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%)}
-  .orb .orb-ic{position:relative;z-index:4;color:#fff;opacity:0;transition:opacity .2s;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+    box-shadow:0 0 60px -4px rgba(120,150,255,.55), inset 0 2px 12px rgba(255,255,255,.35)}
+  :root[data-theme="light"] .orb{box-shadow:0 18px 52px -12px rgba(90,110,180,.55), inset 0 2px 12px rgba(255,255,255,.8)}
+  .orb .orbfx{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;z-index:1}
+  .orb .gloss{position:absolute;inset:0;border-radius:50%;z-index:3;pointer-events:none;background:radial-gradient(52% 40% at 37% 25%, rgba(255,255,255,.85), rgba(255,255,255,0) 58%)}
+  .orb .orb-ic{position:relative;z-index:4;color:#fff;opacity:0;transition:opacity .2s;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
   .stage:active .orb{transform:scale(.96)}
   .stage.rec .orb-ic,.stage.proc .orb-ic{opacity:1}
-  .stage.rec .orb{box-shadow:0 0 70px -2px rgba(120,150,255,.7)}
+  .stage.rec .orb{box-shadow:0 0 78px 0 rgba(120,150,255,.75)}
   .stage.proc .orb-ic svg{animation:spin 1s linear infinite}
-  @keyframes haloM1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(18%,14%) scale(1.2)}}
-  @keyframes haloM2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-16%,16%) scale(.86)}}
-  @keyframes haloM3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(12%,-18%) scale(1.18)}}
   .hero-state{font-family:var(--mono);font-size:11px;letter-spacing:4px;color:var(--faint);text-transform:uppercase;margin-top:16px}
   .hero-hint{font-size:13px;color:var(--muted);margin-top:8px;max-width:280px;line-height:1.45}
   /* ---- botón "Soltar por voz": orbe con aura giratoria ---- */
@@ -2796,11 +2785,50 @@ function mountHalo(){
   if(cv===_haloCv)return;
   stopHalo(); _haloCv=cv; runHalo(cv);
 }
+/* blobs de color del orbe (estilo Siri): centros en movimiento CONTINUO con
+   frecuencias incomensurables -> nunca "reinicia" */
+var ORB_BLOBS=[
+  {c:[41,211,255], ph:0.0, orb:0.30, sp:0.21, sz:0.82},
+  {c:[47,123,255], ph:2.1, orb:0.30, sp:0.16, sz:0.86},
+  {c:[155,92,255], ph:4.0, orb:0.34, sp:0.19, sz:0.80},
+  {c:[255,92,203], ph:5.3, orb:0.27, sp:0.14, sz:0.70},
+  {c:[43,240,198], ph:1.0, orb:0.24, sp:0.25, sz:0.66}
+];
+function drawOrb(octx,ocv,dt,dpr){
+  var w=ocv.width,h=ocv.height,cx=w/2,cy=h/2,R=Math.min(w,h)/2;
+  var light=document.documentElement.getAttribute("data-theme")==="light";
+  octx.clearRect(0,0,w,h);
+  octx.save();
+  octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.clip();   // recorta al círculo
+  // base esfera
+  var bg=octx.createRadialGradient(cx-R*0.18,cy-R*0.22,R*0.1,cx,cy,R*1.05);
+  if(light){ bg.addColorStop(0,"#ffffff"); bg.addColorStop(1,"#dde6f6"); }
+  else{ bg.addColorStop(0,"#3a4472"); bg.addColorStop(1,"#121529"); }
+  octx.fillStyle=bg; octx.fillRect(0,0,w,h);
+  // blobs de color fluyendo
+  octx.globalCompositeOperation=light?"source-over":"lighter";
+  for(var i=0;i<ORB_BLOBS.length;i++){ var b=ORB_BLOBS[i];
+    var ang=b.ph+dt*b.sp;
+    var bx=cx+Math.cos(ang)*R*b.orb + Math.cos(dt*0.13+b.ph*1.7)*R*0.10;
+    var by=cy+Math.sin(ang)*R*b.orb + Math.sin(dt*0.11+b.ph*1.3)*R*0.10;
+    var rad=R*b.sz;
+    var g=octx.createRadialGradient(bx,by,0,bx,by,rad);
+    var a=light?0.55:0.60;
+    g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a+")");
+    g.addColorStop(1,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+",0)");
+    octx.fillStyle=g; octx.beginPath(); octx.arc(bx,by,rad,0,6.2832); octx.fill();
+  }
+  octx.globalCompositeOperation="source-over";
+  octx.restore();
+}
 function runHalo(cv){
   var ctx=cv.getContext&&cv.getContext("2d"); if(!ctx)return;
   var dpr=Math.min(window.devicePixelRatio||1,2),sized=false;
-  function measure(){ var w=0,h=0; try{var r=cv.getBoundingClientRect();w=r.width;h=r.height;}catch(e){} if(!w||!h){w=cv.clientWidth||cv.offsetWidth||0;h=cv.clientHeight||cv.offsetHeight||0;} return {w:w,h:h}; }
-  function resize(){ var m=measure(); if(!m.w||!m.h)return false; var W=Math.max(2,Math.round(m.w*dpr)),H=Math.max(2,Math.round(m.h*dpr)); if(cv.width!==W)cv.width=W; if(cv.height!==H)cv.height=H; return true; }
+  var ocv=(cv.parentNode&&cv.parentNode.querySelector)?cv.parentNode.querySelector("canvas.orbfx"):null;
+  var octx=ocv?ocv.getContext("2d"):null;
+  function measure(el){ var w=0,h=0; try{var r=el.getBoundingClientRect();w=r.width;h=r.height;}catch(e){} if(!w||!h){w=el.clientWidth||el.offsetWidth||0;h=el.clientHeight||el.offsetHeight||0;} return {w:w,h:h}; }
+  function sz1(el){ var m=measure(el); if(!m.w||!m.h)return false; var W=Math.max(2,Math.round(m.w*dpr)),H=Math.max(2,Math.round(m.h*dpr)); if(el.width!==W)el.width=W; if(el.height!==H)el.height=H; return true; }
+  function resize(){ var ok=sz1(cv); if(ocv)sz1(ocv); return ok; }
   cv._resize=function(){ sized=resize(); };
   if(!_haloSeeds){ _haloSeeds=[]; for(var i=0;i<150;i++){ var band=Math.random(); _haloSeeds.push({a:Math.random()*6.2832,rr:0.52+band*0.46,w:0.10+Math.random()*0.30,s:0.6+Math.random()*2.1,base:0.28+Math.random()*0.6,tw:Math.random()*6.2832,tws:0.6+Math.random()*1.8,dr:Math.random()*0.05}); } }
   var P=_haloSeeds;
@@ -2817,6 +2845,7 @@ function runHalo(cv){
       var al=p.base*(0.5+0.5*Math.sin(p.tw+dt*p.tws));
       ctx.beginPath(); ctx.arc(x,y,p.s*dpr,0,6.2832); ctx.fillStyle="rgba("+col+","+al.toFixed(3)+")"; ctx.fill();
     }
+    if(octx) drawOrb(octx,ocv,dt,dpr);
     _haloRAF=requestAnimationFrame(draw);
   }
   _haloRAF=requestAnimationFrame(draw);
@@ -2830,7 +2859,7 @@ function heroOrb(){
     '<div class="greet">'+esc(greeting())+'</div>'+
     '<'+(sup?'button':'div')+' class="stage'+(st==="rec"?" rec":"")+(st==="proc"?" proc":"")+'"'+(sup?' data-action="vac-rec" aria-label="Vaciar por voz"':'')+'>'+
       '<canvas class="halofx"></canvas>'+
-      '<span class="orb"><span class="ob base"></span><span class="ob b1"></span><span class="ob b2"></span><span class="ob b3"></span><span class="ob b4"></span><span class="ob b5"></span><span class="gloss"></span>'+
+      '<span class="orb"><canvas class="orbfx"></canvas><span class="gloss"></span>'+
         '<span class="orb-ic">'+(st==="proc"?IC.spin(22):IC.mic(22))+'</span></span>'+
     '</'+(sup?'button':'div')+'>'+
     '<div class="hero-state">'+esc(label)+'</div>'+
