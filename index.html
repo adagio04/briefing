@@ -2599,13 +2599,20 @@ var _haloRAF=null,_haloCv=null,_haloSeeds=null;
    rotate() no pierdan precisión, pero absoluta respecto a Date.now para seguir
    siendo continua aunque la Home se repinte */
 var _animT0=Date.now();
+/* nacimiento del orbe: solo en el splash de arranque. _birthT0=0 => ya nacido
+   (B=1 al instante), así que cambiar de pestaña no vuelve a lanzarlo */
+var BIRTH_MS=2600,_birthT0=0,_birthStarted=false;
 function stopHalo(){ if(_haloRAF){cancelAnimationFrame(_haloRAF);_haloRAF=null;} _haloCv=null; }
 function mountHalo(){
   var cv=document.querySelector("canvas.halofx");
   if(!cv){ if(_haloCv)stopHalo(); return; }
+  var onSplash=!!(cv.closest&&cv.closest(".splashscreen"));
+  if(onSplash&&!_birthStarted){ _birthStarted=true; _birthT0=Date.now(); }
   if(cv===_haloCv)return;
   stopHalo(); _haloCv=cv; runHalo(cv);
 }
+/* progreso del nacimiento 0..1 (0 si no hay splash en marcha) */
+function birthP(){ return _birthT0?Math.max(0,Math.min(1,(Date.now()-_birthT0)/BIRTH_MS)):1; }
 /* pétalos de color del orbe (estilo Siri): aspas que giran como una flor y
    convergen en un núcleo blanco; frecuencias distintas -> swirl continuo */
 var ORB_PETALS=(function(){
@@ -2613,28 +2620,38 @@ var ORB_PETALS=(function(){
   for(i=0;i<6;i++) a.push({c:cols[i], base:i*(6.2832/6), sp:0.30, off:0.40, rad:0.62, wid:0.50});
   return a;
 })();
-function drawOrb(octx,ocv,dt,dpr){
-  var w=ocv.width,h=ocv.height,cx=w/2,cy=h/2,R=Math.min(w,h)/2;
+function drawOrb(octx,ocv,dt,dpr,birth){
+  birth=(birth==null?1:birth);
+  var w=ocv.width,h=ocv.height,cx=w/2,cy=h/2,R0=Math.min(w,h)/2;
   var light=document.documentElement.getAttribute("data-theme")==="light";
+  /* envolventes del nacimiento: la esfera se infla, los pétalos florecen desde
+     el centro y el núcleo se enciende primero (chispa) */
+  var bo=1-Math.pow(1-birth,3);           // esfera y pétalos (easeOut)
+  var coreB=Math.min(1,birth*2.2);        // el núcleo se enciende primero
+  var flash=Math.max(0,1-birth*2.6);      // destello extra al principio
+  var R=R0*(0.68+0.32*bo);                // la esfera crece 68%→100%
   octx.clearRect(0,0,w,h);
   octx.save();
   octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.clip();
-  // base de cristal
+  // base de cristal (aparece con la esfera)
+  octx.globalAlpha=bo;
   var bg=octx.createRadialGradient(cx-R*0.18,cy-R*0.24,R*0.05,cx,cy,R*1.02);
   if(light){ bg.addColorStop(0,"#eef2fb"); bg.addColorStop(0.72,"#e2e8f6"); bg.addColorStop(1,"#d2dbee"); }
   else{ bg.addColorStop(0,"#161c38"); bg.addColorStop(0.72,"#0b0f20"); bg.addColorStop(1,"#060914"); }
   octx.fillStyle=bg; octx.fillRect(0,0,w,h);
+  octx.globalAlpha=1;
   // reacción a la voz: cuando escucha, el orbe respira y brilla con el volumen
   var rec=(typeof S!=="undefined"&&S.rec==="rec"), lvl=rec?Math.min(1,_micLevel*2.4):0;
   // al hablar NO gira más rápido: fluye. La voz hincha los pétalos, empuja el
   // color hacia fuera y mece el conjunto (sensación líquida), giro constante.
   octx.globalCompositeOperation=light?"source-over":"lighter";
-  var br=1+Math.sin(dt*0.8)*0.05+lvl*0.5, a0=(light?0.5:0.78)+lvl*0.16, a1=(light?0.2:0.28)+lvl*0.1;
+  var br=1+Math.sin(dt*0.8)*0.05+lvl*0.5, a0=((light?0.5:0.78)+lvl*0.16)*bo, a1=((light?0.2:0.28)+lvl*0.1)*bo;
   var surge=lvl*0.14, sway=lvl*Math.sin(dt*2.1)*0.10;
+  var bloom=0.16+0.84*bo;                 // los pétalos nacen juntos y se abren
   for(var i=0;i<ORB_PETALS.length;i++){ var b=ORB_PETALS[i];
     var ang=b.base+dt*b.sp+Math.sin(dt*0.45+b.base)*0.14 + sway;
     octx.save(); octx.translate(cx,cy); octx.rotate(ang); octx.scale(b.rad*br,b.wid);
-    var off=R*(b.off+surge), rad=R*0.9;
+    var off=R*(b.off+surge)*bloom, rad=R*0.9;
     var g=octx.createRadialGradient(off,0,0,off,0,rad);
     g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a0+")");
     g.addColorStop(0.45,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+","+a1+")");
@@ -2642,20 +2659,23 @@ function drawOrb(octx,ocv,dt,dpr){
     octx.fillStyle=g; octx.beginPath(); octx.arc(off,0,rad,0,6.2832); octx.fill();
     octx.restore();
   }
-  // núcleo blanco (crece y brilla con la voz)
-  var cr=R*(0.34+lvl*0.22);
+  // núcleo blanco (chispa que enciende; crece y brilla con la voz)
+  var cr=R*(0.34+lvl*0.22)*(0.5+0.5*coreB);
+  var ca0=(light?0.9:0.95)*coreB+flash*0.6;
   var core=octx.createRadialGradient(cx,cy,0,cx,cy,cr);
-  core.addColorStop(0,light?"rgba(255,255,255,.9)":"rgba(245,251,255,.95)");
-  core.addColorStop(0.45,light?"rgba(220,235,255,"+(0.3+lvl*0.3).toFixed(2)+")":"rgba(170,210,255,"+(0.35+lvl*0.3).toFixed(2)+")");
+  core.addColorStop(0,"rgba("+(light?"255,255,255":"245,251,255")+","+Math.min(1,ca0).toFixed(2)+")");
+  core.addColorStop(0.45,light?"rgba(220,235,255,"+((0.3+lvl*0.3)*coreB).toFixed(2)+")":"rgba(170,210,255,"+((0.35+lvl*0.3)*coreB).toFixed(2)+")");
   core.addColorStop(1,"rgba(255,255,255,0)");
   octx.fillStyle=core; octx.beginPath(); octx.arc(cx,cy,cr,0,6.2832); octx.fill();
   octx.globalCompositeOperation="source-over";
-  // borde de cristal
+  // borde de cristal (aparece con la esfera)
+  octx.globalAlpha=bo;
   var rim=octx.createRadialGradient(cx,cy,R*0.78,cx,cy,R);
   rim.addColorStop(0,"rgba(255,255,255,0)");
   rim.addColorStop(0.86,light?"rgba(120,140,190,0.06)":"rgba(180,205,255,0.08)");
   rim.addColorStop(1,light?"rgba(120,140,190,0.3)":"rgba(210,230,255,0.32)");
   octx.fillStyle=rim; octx.beginPath(); octx.arc(cx,cy,R,0,6.2832); octx.fill();
+  octx.globalAlpha=1;
   octx.restore();
 }
 function runHalo(cv){
@@ -2667,7 +2687,7 @@ function runHalo(cv){
   function sz1(el){ var m=measure(el); if(!m.w||!m.h)return false; var W=Math.max(2,Math.round(m.w*dpr)),H=Math.max(2,Math.round(m.h*dpr)); if(el.width!==W)el.width=W; if(el.height!==H)el.height=H; return true; }
   function resize(){ var ok=sz1(cv); if(ocv)sz1(ocv); return ok; }
   cv._resize=function(){ sized=resize(); };
-  if(!_haloSeeds){ _haloSeeds=[]; for(var i=0;i<150;i++){ var band=Math.random(); _haloSeeds.push({a:Math.random()*6.2832,rr:0.52+band*0.46,w:0.10+Math.random()*0.30,s:0.6+Math.random()*2.1,base:0.28+Math.random()*0.6,tw:Math.random()*6.2832,tws:0.6+Math.random()*1.8,dr:Math.random()*0.05}); } }
+  if(!_haloSeeds){ _haloSeeds=[]; for(var i=0;i<150;i++){ var band=Math.random(); _haloSeeds.push({a:Math.random()*6.2832,rr:0.52+band*0.46,w:0.10+Math.random()*0.30,s:0.6+Math.random()*2.1,base:0.28+Math.random()*0.6,tw:Math.random()*6.2832,tws:0.6+Math.random()*1.8,dr:Math.random()*0.05,bd:0.05+band*0.45+Math.random()*0.1}); } }
   var P=_haloSeeds;
   var col=(getComputedStyle(document.documentElement).getPropertyValue("--halo")||"").trim()||"110,120,134";
   function draw(){
@@ -2676,6 +2696,9 @@ function runHalo(cv){
     var w=cv.width,h=cv.height,cx=w/2,cy=h/2,dt=(Date.now()-_animT0)/1000;
     ctx.clearRect(0,0,w,h);
     var R=Math.min(w,h)*0.47,ys=0.96;
+    /* nacimiento: el resplandor y las partículas emergen del orbe y se asientan
+       en su órbita; al llegar a 1 coincide con el estado estable (sin corte) */
+    var B=birthP(), gb=1-Math.pow(1-B,3), Ro=R*0.30;
     /* nivel del micrófono (suavizado) para que todo reaccione a la voz */
     if(_micAna&&_micData){ try{ _micAna.getByteFrequencyData(_micData); var ss=0,nn=_micData.length; for(var mi=0;mi<nn;mi++)ss+=_micData[mi]; var avg=(ss/nn)/255; _micLevel+=(avg-_micLevel)*0.25; }catch(e){} }
     else { _micLevel+=(0-_micLevel)*0.12; }
@@ -2685,16 +2708,20 @@ function runHalo(cv){
     var light=document.documentElement.getAttribute("data-theme")==="light";
     var gc=light?"120,140,210":"120,150,255";
     var glow=ctx.createRadialGradient(cx,cy,R*0.22,cx,cy,R*(0.92+lvl*0.25));
-    glow.addColorStop(0,"rgba("+gc+","+((light?0.16:0.20)+lvl*0.22).toFixed(3)+")");
+    glow.addColorStop(0,"rgba("+gc+","+(((light?0.16:0.20)+lvl*0.22)*gb).toFixed(3)+")");
     glow.addColorStop(1,"rgba("+gc+",0)");
     ctx.fillStyle=glow; ctx.fillRect(0,0,w,h);
     for(var j=0;j<P.length;j++){ var p=P[j];
-      var ang=p.a+dt*p.w, rad=(p.rr+Math.sin(dt*0.8+p.tw)*p.dr)*R;
+      var pe=B>=1?1:(B-p.bd)/Math.max(0.0001,1-p.bd);
+      if(pe<=0)continue;
+      pe=pe>=1?1:1-Math.pow(1-pe,2);
+      var ang=p.a+dt*p.w, radT=(p.rr+Math.sin(dt*0.8+p.tw)*p.dr)*R;
+      var rad=Ro+(radT-Ro)*pe;
       var x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad*ys;
-      var al=p.base*(0.5+0.5*Math.sin(p.tw+dt*p.tws));
+      var al=p.base*(0.5+0.5*Math.sin(p.tw+dt*p.tws))*pe;
       ctx.beginPath(); ctx.arc(x,y,p.s*dpr,0,6.2832); ctx.fillStyle="rgba("+col+","+al.toFixed(3)+")"; ctx.fill();
     }
-    if(octx) drawOrb(octx,ocv,dt,dpr);
+    if(octx) drawOrb(octx,ocv,dt,dpr,B);
     _haloRAF=requestAnimationFrame(draw);
   }
   _haloRAF=requestAnimationFrame(draw);
